@@ -68,19 +68,19 @@ class GeochemDB:
         table_df = pd.read_sql_query(f'SELECT * from {table}', con)
         con.close()
 
+        n_names = len(names)
+
         # if table is empty, return empty idx, sample_matches
+        idx = np.zeros(n_names, dtype=bool)
         if len(table_df) == 0:
-            return np.zeros(0, dtype=bool), {}
+            return idx, {}
 
         # table rows to match to
         rows = table_df[column].values
 
-        n_names = len(names)
-
         # matched names
         name_matches = []
         row_matches = []
-        idx = np.zeros(n_names, dtype=bool)
         for ii, name in enumerate(names):
             # use fuzzy matching to get nearest match and score
             row_match, score = process.extractOne(name, rows)
@@ -332,6 +332,9 @@ class GeochemDB:
 
         # match samples
         df_analyses = self.matchsamples_df(df_analyses)
+        # remove measurements with missing samples
+        idx = df_measurements['analysis'].isin(df_analyses['analysis'])
+        df_measurements = df_measurements.loc[idx]
 
         # create necessary aliquots
         df_aliquots = df_analyses.drop_duplicates('aliquot')
@@ -365,7 +368,7 @@ class GeochemDB:
 
 
 # df = iolite_tools.excel2measurements(['../../../python/iolite_tools/example_data/2023-03_run-5_trace.xlsx'],
-#                 ['2023-03'], [5], 'trace')
+#                                      ['2023-03'], [5], 'trace')
 df = iolite_tools.excel2measurements(['../../../python/iolite_tools/example_data/2023-03_run-5_U-Pb.xlsx'],
                                      ['2023-03'], [5], 'U-Pb')
 df_measurements = iolite_tools.measurements2sql(df, refmat='91500')
