@@ -1,12 +1,7 @@
-import iolite_tools
 import sqlite3
 import numpy as np
 import pandas as pd
-from thefuzz import fuzz, process
-import warnings
-import re
-
-# %%
+from thefuzz import process
 
 
 class GeochemDB:
@@ -218,7 +213,7 @@ class GeochemDB:
             set(sample_names_matched)
 
         if len(samples_not_matched) > 0:
-            print(f'Some sample names not matched:\n{samples_not_matched}')
+            print(f'Sample names not matched:\n{samples_not_matched}')
 
         # keep only rows with matched samples (indexing into df)
         idx_samples = np.array(
@@ -457,6 +452,10 @@ class GeochemDB:
 
         # match samples
         df_aliquots = self.matchsamples_df(df_aliquots)
+        # if no matching samples, stop
+        if len(df_aliquots) == 0:
+            print('No samples matched.')
+            return
         # remove analyses for aliquots with missing samples
         idx = df_analyses['aliquot'].isin(df_aliquots['aliquot'])
         df_analyses = df_analyses.loc[idx]
@@ -489,41 +488,7 @@ class GeochemDB:
                          cols_meas,
                          df_measurements[cols_meas].values.tolist())
 
-        print(f'Added:\n' +
+        print('Added:\n' +
               f'{np.sum(idx_aliquots)} aliquots,\n' +
               f'{np.sum(idx_analyses)} analyses,\n' +
               f'{len(df_measurements)} measurements')
-
-# %% test data
-
-
-df = iolite_tools.excel2measurements(['../../../python/iolite_tools/example_data/2023-03_run-5_trace.xlsx'],
-                                     ['2023-03'], [5], 'trace')
-# df = iolite_tools.excel2measurements(['../../../python/iolite_tools/example_data/2023-03_run-5_U-Pb.xlsx'],
-#                                      ['2023-03'], [5], 'U-Pb')
-df_measurements = iolite_tools.measurements2sql(df, refmat='91500')
-df_analyses = iolite_tools.analyses2sql(df, date='2023-03-17',
-                                        instrument='Nu Plasma 3D',
-                                        technique='LASS ICPMS')
-df_aliquots = iolite_tools.aliquots2sql(df, material='zircon')
-
-database_path = '../geochem.db'
-
-df_cols = list(df)
-
-# %%
-
-geochemdb = GeochemDB(database_path)
-
-# %%
-# simulate add_measurements
-idx, row_match_dict = geochemdb.matchrows_strings('Analyses',
-                                                  df_analyses['analysis'].values,
-                                                  'name', score_threshold=99)
-
-
-# %%
-geochemdb.measurements_add(df_measurements, df_analyses, df_aliquots)
-
-# %%
-geochemdb.measurements_update(df_measurements)
