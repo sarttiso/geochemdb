@@ -429,11 +429,23 @@ class GeochemDB:
             """All aliquots in df_analyses must be present in
                 df_aliquots, and vice versa."""
 
+        # match samples
+        df_aliquots = self.matchsamples_df(df_aliquots)
+        # if no matching samples, stop
+        if len(df_aliquots) == 0:
+            print('No samples matched.')
+            return
+        # remove analyses for aliquots with missing samples
+        idx = df_analyses['aliquot'].isin(df_aliquots['aliquot'])
+        df_analyses = df_analyses.loc[idx]
+        # remove measurements with missing samples
+        idx = df_measurements['analysis'].isin(df_analyses['analysis'])
+        df_measurements = df_measurements.loc[idx]
+
         # distinguish between existing and new measurements
         idx = self.matchrows('Measurements',
                              df_measurements[['analysis', 'quantity']].values,
                              ['analysis', 'quantity'])
-
         # if all measurements are already in the database, stop
         if np.sum(idx) == len(df_measurements):
             print('All measurements already in database, use ' +
@@ -449,19 +461,6 @@ class GeochemDB:
             analyses_unique = df_measurements['analysis'].unique()
             idx = df_analyses['analysis'].isin(analyses_unique).values
             df_analyses = df_analyses.iloc[idx]
-
-        # match samples
-        df_aliquots = self.matchsamples_df(df_aliquots)
-        # if no matching samples, stop
-        if len(df_aliquots) == 0:
-            print('No samples matched.')
-            return
-        # remove analyses for aliquots with missing samples
-        idx = df_analyses['aliquot'].isin(df_aliquots['aliquot'])
-        df_analyses = df_analyses.loc[idx]
-        # remove measurements with missing samples
-        idx = df_measurements['analysis'].isin(df_analyses['analysis'])
-        df_measurements = df_measurements.loc[idx]
 
         # create necessary aliquots
         idx_aliquots = ~self.matchrows('Aliquots',
