@@ -30,6 +30,19 @@ class GeochemDB:
 
         """
         self._database_path = database_path
+        self.con = sqlite3.connect(self._database_path)
+        self.cursor = self.con.cursor()
+
+    def __del__(self):
+        """
+        destructor, just want to close sqlite connection
+
+        Returns
+        -------
+        None.
+
+        """
+        self.con.close()
 
     def matchrows_strings(self, table, names, column, score_threshold=98):
         """
@@ -56,11 +69,8 @@ class GeochemDB:
             names
 
         """
-        # connect to database
-        con = sqlite3.connect(self._database_path)
         # read table
-        table_df = pd.read_sql_query(f'SELECT * from {table}', con)
-        con.close()
+        table_df = pd.read_sql_query(f'SELECT * from {table}', self.con)
 
         n_names = len(names)
 
@@ -87,6 +97,46 @@ class GeochemDB:
         row_match_dict = dict(zip(name_matches, row_matches))
         return idx, row_match_dict
 
+    def matchrows(self, table, values, columns):
+        """
+        exactly match rows in a table based on provided values
+
+        Parameters
+        ----------
+        table : str
+            name of the table to match rows into.
+        values : arraylike
+            array of values to match.
+        columns : arraylike
+            names of columns in table that contain values; must have same
+            length as second dimension of values
+
+        Returns
+        -------
+        idx : array (bool)
+            logical indices of length len(names); true for each row in values
+            matched in the table.
+
+        """
+        # make columns array
+        columns = np.atleast_1d(columns)
+        # make values column vector if necessary
+        if values.ndim == 1:
+            values = values.reshape(-1, 1)
+
+        # make sure columns and values have same shapes
+        assert len(columns) == values.shape[1], \
+            'values.shape[1] should be same as number of comparison columns.'
+        # read table
+        table_df = pd.read_sql_query(f'SELECT * from {table}', self.con)
+
+        table_arr = table_df[columns].values
+
+        # indices of rows in values that are matched in table_arr
+        idx = (values[:, None] == table_arr).all(2).any(1)
+
+        return idx
+
     def matchcolumns(self, table, df_cols, score_threshold=96.0):
         """
         Match columns of df to columns in the sqlite database
@@ -107,11 +157,8 @@ class GeochemDB:
             columns for the matched table
 
         """
-        # connect to database
-        con = sqlite3.connect(self._database_path)
-        cursor = con.cursor()
         # get table header
-        res = cursor.execute(f'PRAGMA table_info("{table}")')
+        res = self.cursor.execute(f'PRAGMA table_info("{table}")')
         columns_info = res.fetchall()
         # sqlite columns, not sure what the last 3 are
         cols_sq_df = pd.DataFrame(columns=['id',
@@ -121,8 +168,6 @@ class GeochemDB:
                                            'c2',
                                            'c3'],
                                   data=columns_info)
-
-        con.close()
 
         sq_cols = cols_sq_df['name'].values
 
@@ -184,7 +229,7 @@ class GeochemDB:
 
         return df.copy()
 
-    def insert_row(self, table, columns, values):
+    def insert_rows(self, table, columns, values):
         """
 
 
@@ -194,172 +239,193 @@ class GeochemDB:
             name of table in which to insert row.
         columns : arraylike
             columns in table to insert new values for.
-        values : arraylike
-            same length as columns, values for those columns.
+        values : list
+            must be a list of tuples
 
         Returns
         -------
         None.
 
         """
-        assert len(columns) == len(values), 'Must have value for each column.'
-        # connect to database
-        con = sqlite3.connect(self._database_path)
-        # create cursor
-        cursor = con.cursor()
+        assert len(columns) == len(values[0]),\
+            'Must have value for each column.'
 
-        # columns as string
+        # columns and values as string
         cols_str = ''
+        vals_str = ''
         for ii in range(len(columns)-1):
             cols_str = cols_str + columns[ii] + ', '
-        cols_str = cols_str + columns[-1]
-
-        # values ? string
-        vals_str = ''
-        for ii in range(len(values)-1):
             vals_str = vals_str + '?, '
+        cols_str = cols_str + columns[-1]
         vals_str = vals_str + '?'
 
         # sql string
         sql = f'INSERT INTO {table} ({cols_str}) VALUES ({vals_str})'
 
         # execute sql
-        cursor.execute(sql, values)
+        self.cursor.executemany(sql, values)
 
         # commit
-        con.commit()
+        self.con.commit()
 
-        # close connection
-        con.close()
+    # def measurements_update(self, df_measurements):
+    #     """
+    #     Update matching spot measurements in the Measurements table for
+    #     matching analyses. Does not attempt to add analyses, aliquots, or
+    #     samples.
 
-    def measurements_update(self, df_measurements):
-        """
-        Update matching spot measurements in the Measurements table for
-        matching analyses. Does not attempt to add analyses, aliquots, or
-        samples.
+    #     Parameters
+    #     ----------
+    #     df : pd.DataFrame
+    #         Ideally generated by iolite_tools.measurements2sql()
+    #         must have minimally the following columns:
+    #             analysis, quantity, mean, measurement_unit, uncertainty,
+    #             uncertainty_unit
+    #         optionally:
+    #             reference_material
 
-        Parameters
-        ----------
-        df : pd.DataFrame
-            Ideally generated by iolite_tools.measurements2sql()
-            must have minimally the following columns:
-                analysis, quantity, mean, measurement_unit, uncertainty,
-                uncertainty_unit
-            optionally:
-                reference_material
+    #     Returns
+    #     -------
+    #     None.
 
-        Returns
-        -------
-        None.
+    #     """
+    #     # match analyses
+    #     idx, _ = self.matchrows_strings('Analyses',
+    #                                     df_measurements[''],
+    #                                     column)
 
-        """
-        # match samples in the df to those in the database
-        df = self.matchsamples_df(df)
+    #     # run ids
+    #     df = self.matchruns_df(df)
 
-        # run ids
-        df = self.matchruns_df(df)
+    #     # indices of matching spots
+    #     idx = self.matchspots(df)
 
-        # indices of matching spots
-        idx = self.matchspots(df)
+    #     # if no spots, exception
+    #     if np.sum(idx) == 0:
+    #         raise Exception('No spots found to update.')
 
-        # if no spots, exception
-        if np.sum(idx) == 0:
-            raise Exception('No spots found to update.')
+    #     # focus just on spots to update
+    #     df = df.loc[idx]
 
-        # focus just on spots to update
-        df = df.loc[idx]
+    #     # match columns from df to sqlite (ignore spot matching cols)
+    #     df_cols = list(set(['spot', 'sample', 'runID']) ^ set(list(df)))
+    #     cols_match_dict = self.matchcolumns('geochemistry', df_cols)
 
-        # match columns from df to sqlite (ignore spot matching cols)
-        df_cols = list(set(['spot', 'sample', 'runID']) ^ set(list(df)))
-        cols_match_dict = self.matchcolumns('geochemistry', df_cols)
-
-        # if no matches, exception
-        if len(cols_match_dict) == 0:
-            raise Exception('No matching database columns.')
+    #     # if no matches, exception
+    #     if len(cols_match_dict) == 0:
+    #         raise Exception('No matching database columns.')
 
         # finally update data
 
-    def measurements_add(self, df_analyses, df_measurements):
+    def measurements_add(self, df_measurements, df_analyses, df_aliquots):
         """
         Add measurements for new analyses, but don't add samples.
 
         Parameters
         ----------
-        df_analyses : pd.DataFrame
-            DataFrame suitable for reference against the Analyses table.    
-            must have the following columns:
-            analysis, aliquot, sample, date, insturment, technique, material    
-
         df_measurements : pd.DataFrame
             DataFram suitable for reference against the Measurements table
             must have have the following columns:
                 analysis, quantity, mean, measurement_unit, uncertainty,
                 uncertainty_unit
+        df_analyses : pd.DataFrame
+            DataFrame suitable for reference against the Analyses table.
+            must have the following columns:
+            analysis, aliquot, date, insturment, technique
+        df_aliquots : pd.DataFrame
+            DataFrame suitable for reference against the Aliquots table.
+            must have the following columns:
+            aliquot, sample, material
 
         Returns
         -------
         None.
 
         """
-        # make sure that all analyses in df_measurements are also in df_analyses
+        # check for basic column structure
+        cols_meas = ['analysis', 'quantity', 'mean', 'measurement_unit',
+                     'uncertainty', 'uncertainty_unit', 'reference_material']
+        assert set(cols_meas) <= set(list(df_measurements)), \
+            'Missing columns in df_measurements.'
+        cols_analyses = ['analysis', 'aliquot',
+                         'date', 'instrument', 'technique']
+        assert set(cols_analyses) <= set(list(df_analyses)), \
+            'Missing columns in df_analyses.'
+        cols_aliquots = ['aliquot', 'sample', 'material']
+        assert set(cols_aliquots) <= set(list(df_aliquots)), \
+            'Missing columns in df_aliquots.'
+
+        # make sure that all analyses in df_measurements are also in
+        # df_analyses
         assert set(df_analyses['analysis'].unique().tolist()) == \
             set(df_measurements['analysis'].unique().tolist()), \
             """All analyses in df_analyses must be present in
                 df_measurements, and vice versa."""
 
-        # distinguish between existing and new analyses for existing samples
-        idx, row_match_dict = \
-            self.matchrows_strings('Analyses',
-                                   df_analyses['analysis'].values,
-                                   'name',
-                                   score_threshold=99)
+        # make sure that all aliquots in df_analyses are also in df_aliquots
+        assert set(df_analyses['aliquot'].unique().tolist()) == \
+            set(df_aliquots['aliquot'].unique().tolist()), \
+            """All aliquots in df_analyses must be present in
+                df_aliquots, and vice versa."""
 
-        # ignore existing analyses
+        # distinguish between existing and new measurements
+        idx = self.matchrows('Measurements',
+                             df_measurements[['analysis', 'quantity']].values,
+                             ['analysis', 'quantity'])
+
+        # if all measurements are already in the database, stop
+        if np.sum(idx) == len(df_measurements):
+            print('All measurements already in database, use ' +
+                  'measurements_update() instead.')
+            return
+
+        # ignore existing measurements
         if np.sum(idx) > 0:
-            print('Existing analyses found, ignoring.')
-            # remove from df_analyses
-            df_analyses = df_analyses.iloc[~idx]
-            # remove corresponding rows from df_measurements
-            idx_measurements = df_measurements['analysis'].isin(
-                list(row_match_dict.keys())).values
-            df_measurements = df_measurements.iloc[~idx_measurements]
+            print('Existing measurements found, ignoring.')
+            # remove from df_measurements
+            df_measurements = df_measurements.iloc[~idx]
+            # keep only corresponding analyses
+            analyses_unique = df_measurements['analysis'].unique()
+            idx = df_analyses['analysis'].isin(analyses_unique).values
+            df_analyses = df_analyses.iloc[idx]
 
         # match samples
-        df_analyses = self.matchsamples_df(df_analyses)
+        df_aliquots = self.matchsamples_df(df_aliquots)
+        # remove analyses for aliquots with missing samples
+        idx = df_analyses['aliquot'].isin(df_aliquots['aliquot'])
+        df_analyses = df_analyses.loc[idx]
         # remove measurements with missing samples
         idx = df_measurements['analysis'].isin(df_analyses['analysis'])
         df_measurements = df_measurements.loc[idx]
 
         # create necessary aliquots
-        df_aliquots = df_analyses.drop_duplicates('aliquot')
-        idx, aliquot_match_dict =  \
-            self.matchrows_strings('Aliquots',
-                                   df_aliquots['aliquot'].values,
-                                   'name')
-        idx_create = np.argwhere(~idx)
-        for idx in idx_create:
-            cur_values = df_aliquots.iloc[idx][['aliquot',
-                                                'material',
-                                                'sample']].values.squeeze()
-            self.insert_row('Aliquots',
-                            ['name', 'material', 'sample'],
-                            cur_values)
+        idx_aliquots = ~self.matchrows('Aliquots',
+                                       df_aliquots['aliquot'].values,
+                                       'aliquot')
+        if np.any(idx_aliquots):
+            cur_values = df_aliquots.loc[idx_aliquots][cols_aliquots].values
+            self.insert_rows('Aliquots',
+                             cols_aliquots,
+                             cur_values.tolist())
 
-        # then add analyses
-        cols_analyses = ['analysis', 'aliquot',
-                         'date', 'instrument', 'technique']
-        cols_Analyses = ['name', 'aliquot', 'date', 'instrument', 'technique']
-        for ii, row in df_analyses[cols_analyses].iterrows():
-            self.insert_row('Analyses', cols_Analyses, row.values)
+        # create necessary analyses
+        idx_analyses = ~self.matchrows('Analyses',
+                                       df_analyses['analysis'].values,
+                                       'analysis')
+        if np.any(idx_analyses):
+            cur_values = df_analyses.loc[idx_analyses][cols_analyses].values
+            self.insert_rows('Analyses',
+                             cols_analyses,
+                             cur_values.tolist())
 
         # then add measurements
-        cols_meas = ['analysis', 'quantity', 'mean', 'measurement_unit',
-                     'uncertainty', 'uncertainty_unit', 'reference_material']
-        for ii, row in df_measurements[cols_meas].iterrows():
-            self.insert_row('Measurements', cols_meas, row.values)
+        self.insert_rows('Measurements',
+                         cols_meas,
+                         df_measurements[cols_meas].values.tolist())
+
         print(f'Added:\n' +
-              f'{len(idx_create)} aliquots,\n' +
-              f'{len(df_analyses)} analyses,\n' +
+              f'{np.sum(idx_aliquots)} aliquots,\n' +
+              f'{np.sum(idx_analyses)} analyses,\n' +
               f'{len(df_measurements)} measurements')
 
 # %% test data
@@ -372,8 +438,8 @@ df = iolite_tools.excel2measurements(['../../../python/iolite_tools/example_data
 df_measurements = iolite_tools.measurements2sql(df, refmat='91500')
 df_analyses = iolite_tools.analyses2sql(df, date='2023-03-17',
                                         instrument='Nu Plasma 3D',
-                                        technique='LASS ICPMS',
-                                        material='zircon')
+                                        technique='LASS ICPMS')
+df_aliquots = iolite_tools.aliquots2sql(df, material='zircon')
 
 database_path = '../geochem.db'
 
@@ -391,4 +457,4 @@ idx, row_match_dict = geochemdb.matchrows_strings('Analyses',
 
 
 # %%
-geochemdb.measurements_add(df_analyses, df_measurements)
+geochemdb.measurements_add(df_measurements, df_analyses, df_aliquots)
