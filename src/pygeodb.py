@@ -492,3 +492,49 @@ class GeochemDB:
               f'{np.sum(idx_aliquots)} aliquots,\n' +
               f'{np.sum(idx_analyses)} analyses,\n' +
               f'{len(df_measurements)} measurements')
+
+    def measurements_by_sample(self, samples):
+        """
+        return a DataFrame with all measurements corresponding to the requested
+        samples
+
+        Parameters
+        ----------
+        samples : str or arraylike
+            sample or samples for which to retrieve measurements
+
+        Returns
+        -------
+        df : pd.DataFrame
+            all measurements associated with the sample.
+
+        """
+        samples = np.atleast_1d(samples)
+
+        # get aliquots matching samples
+        if len(samples) == 1:
+            sql = f'SELECT aliquot, sample FROM Aliquots WHERE sample = "{samples[0]}"'
+        else:
+            sql = f'SELECT aliquot, sample FROM Aliquots WHERE sample in {tuple(samples)}'
+        df_aliquots = pd.read_sql_query(sql, self.con)
+        aliquots = tuple(df_aliquots['aliquot'].values)
+
+        # then get matching analyses and measurements
+        sql = f'SELECT analysis, aliquot FROM Analyses WHERE aliquot in {aliquots}'
+        df_analyses = pd.read_sql_query(sql, self.con)
+        analyses = tuple(df_analyses['analysis'].values)
+
+        sql = f'SELECT * FROM Measurements WHERE analysis in {analyses}'
+        df_measurements = pd.read_sql_query(sql, self.con)
+
+        # add aliquot and sample information
+        df_analyses = df_analyses.merge(df_aliquots,
+                                        how='left',
+                                        left_on='aliquot',
+                                        right_on='aliquot')
+        df_measurements = df_measurements.merge(df_analyses,
+                                                how='left',
+                                                left_on='analysis',
+                                                right_on='analysis')
+
+        return df_measurements
