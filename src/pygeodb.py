@@ -67,6 +67,8 @@ class GeochemDB:
         # read table
         table_df = pd.read_sql_query(f'SELECT * from {table}', self.con)
 
+        # more flexible input
+        names = np.atleast_1d(names)
         n_names = len(names)
 
         # if table is empty, return empty idx, sample_matches
@@ -378,7 +380,8 @@ class GeochemDB:
         print('Updated:\n' +
               f'{len(df_measurements)} measurements')
 
-    def measurements_add(self, df_measurements, df_analyses, df_aliquots):
+    def measurements_add(self, df_measurements, df_analyses, df_aliquots,
+                         score_threshold=98):
         """
         Add measurements for new analyses, but don't add samples.
 
@@ -397,6 +400,8 @@ class GeochemDB:
             DataFrame suitable for reference against the Aliquots table.
             must have the following columns:
             aliquot, sample, material
+        score_threshold : int
+            0-100, scoring threshold for matching sample names. defaults to 98 
 
         Returns
         -------
@@ -430,7 +435,7 @@ class GeochemDB:
                 df_aliquots, and vice versa."""
 
         # match samples
-        df_aliquots = self.matchsamples_df(df_aliquots)
+        df_aliquots = self.matchsamples_df(df_aliquots, score_threshold=score_threshold)
         # if no matching samples, stop
         if len(df_aliquots) == 0:
             print('No samples matched.')
@@ -547,6 +552,7 @@ def aliquot_average(df_measurements):
 
     to do:
         implement more robust duplicate checking
+        responsible uncertainty propagation
 
     Parameters
     ----------
