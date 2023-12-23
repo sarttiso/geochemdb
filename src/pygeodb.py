@@ -569,8 +569,8 @@ def aliquot_average(df_measurements):
         df_measurements.pivot_table(columns=['quantity'],
                                     index='aliquot',
                                     values=['mean', 'uncertainty'],
-                                    aggfunc={'mean': np.mean,
-                                             'uncertainty': np.max})
+                                    aggfunc={'mean': 'mean',
+                                             'uncertainty': 'max'})
     df_aliquots = df_aliquots.reorder_levels([1, 0], axis=1)
 
     return df_aliquots
