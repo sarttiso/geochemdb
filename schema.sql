@@ -1,0 +1,13 @@
+CREATE TABLE Quantities (name PRIMARY KEY);
+CREATE TABLE MeasurementUnits (name PRIMARY KEY);
+CREATE TABLE Samples (name TEXT (40) NOT NULL PRIMARY KEY, formation TEXT (40), site TEXT (40), "date collected" TEXT (30), "time period" TEXT, age REAL, "age 2SE" REAL, latitude REAL, longitude REAL, "horizontal precision (m)" REAL, elevation REAL, "vertical precision" REAL, "chemical type" TEXT, "metamorphic type" TEXT, "sediment grain size" TEXT);
+CREATE TABLE Materials (name TEXT PRIMARY KEY);
+CREATE TABLE QuantitiesMeasurementUnits (quantity REFERENCES Quantities (name), measurement_unit REFERENCES MeasurementUnits (name));
+CREATE TABLE UncertaintyUnits (name PRIMARY KEY);
+CREATE TABLE Techniques (name TEXT PRIMARY KEY);
+CREATE TABLE Instruments (name TEXT PRIMARY KEY);
+CREATE TABLE Measurements (analysis REFERENCES Analyses (analysis), quantity REFERENCES Quantities (name), mean REAL, measurement_unit REFERENCES MeasurementUnits (name), uncertainty REAL, uncertainty_unit REFERENCES UncertaintyUnits (name), reference_material TEXT);
+CREATE TRIGGER "measurement unit check update" BEFORE UPDATE ON Measurements FOR EACH ROW BEGIN SELECT RAISE (ABORT, 'Invalid combination: quantity and unit must exist in QuantitiesMeasurementUnits table') WHERE NOT EXISTS(SELECT 1 FROM QuantitiesMeasurementUnits WHERE quantity = NEW.quantity AND measurement_unit = NEW.measurement_unit); END;
+CREATE TRIGGER "measurement unit check insert" BEFORE INSERT ON Measurements FOR EACH ROW BEGIN SELECT RAISE (ABORT, 'Invalid combination: quantity and unit must exist in QuantitiesMeasurementUnits table') WHERE NOT EXISTS(SELECT 1 FROM QuantitiesMeasurementUnits WHERE quantity = NEW.quantity AND measurement_unit = NEW.measurement_unit); END;
+CREATE TABLE Analyses (analysis PRIMARY KEY, aliquot REFERENCES Aliquots (aliquot), date TEXT, instrument REFERENCES Instruments (name), technique REFERENCES Techniques (name));
+CREATE TABLE Aliquots (aliquot PRIMARY KEY, material REFERENCES Materials (name), sample REFERENCES Samples (name));
