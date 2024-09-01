@@ -14,14 +14,8 @@ class GeochemDB:
         """
         create a GeochemDB instance
 
-        Parameters
-        ----------
-        database_path : str
-            Path to sqlite geochem database.
-
-        Returns
-        -------
-        None.
+        :param database_path: path to sqlite database
+        :type database_path: str
 
         """
         self._database_path = database_path
@@ -31,11 +25,6 @@ class GeochemDB:
     def __del__(self):
         """
         destructor, just want to close sqlite connection
-
-        Returns
-        -------
-        None.
-
         """
         self.con.close()
 
@@ -43,15 +32,17 @@ class GeochemDB:
         """
         match to rows in a table based on a column in the row using strings
 
-        Parameters
-        ----------
-        table : str
-            name of table to do row matching in
-        names : arraylike
-            list of names to match in the table
-        column : str
-            name of column in table to do matching on
+        :param table: name of the table to match rows into.
+        :type table: str
+        :param names: list of names to match in the table
+        :type names: arraylike
+        :param column: name of column in table to do matching on
+        :type column: str
 
+        :return: logical indices of length len(names); true for each entry matched in the table
+        :rtype: array (bool)
+        :return: closest matching sample names in database with scores exceeding the threshold as values for keys being the provide matching sample names
+        :rtype: dict
 
         Returns
         -------
