@@ -12,7 +12,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   Module Reference <api/modules>
+   Module Reference <modules>
    License <license>
    Changelog <changelog>
 
