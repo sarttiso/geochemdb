@@ -1,3 +1,5 @@
+.ipynb_checkpoints
+.virtual_documents
 # Temporary and binary files
 *~
 *.py[cod]
@@ -51,5 +53,3 @@ MANIFEST
 # Per-project virtualenvs
 .venv*/
 .conda*/
-/.ipynb_checkpoints
-/.virtual_documents
