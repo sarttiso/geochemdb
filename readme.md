@@ -4,8 +4,31 @@ This python module provides a class and methods for adding, updating, and readin
 
 A minimal SQLite schema for utilizing this package is presented below and available in this repository as [schema.sql](schema.sql). [SQLiteStudio](https://sqlitestudio.pl/) provides a convenient way to access and modify SQLite databases.
 
-## Installation
-In progress...
+## Getting Started
+
+### Installation
+The `pygeodb` package can be installed with 
+
+`pip install pygeodb`
+
+### Create Database
+
+#### Option 1
+I have a provided the [schema.sql](schema.sql) file for the structure shown below. You can use this to create your own, empty database by executing:
+
+`sqlite3 your-geochem-database.db < schema.sql` 
+
+#### Option 2
+Alternatively, download and install [SQLiteStudio](https://sqlitestudio.pl/). Create a new database from the "Database/Add a Database" menu. Create the file wherever you like, and name it as you like. Right click the newly-created database in the pane on the left and click "Execute SQL from file." In the new window, select the input file by navigating to the schema.sql file I provide and click ok. 
+
+#### Option 3
+Finally, you can just download the example database [`geochemdb_example.db`](example_data/geochemdb_example.db) in the *example_data* folder.
+
+> [!NOTE]  
+> Samples must be added to the database manually. You can use SQLiteStudio for this.
+
+### Tutorial
+I have prepared a [guide](guide.ipynb) as a Jupyter notebook showing the functionality of `pygeodb`. This guide is the best way to get a sense for how to use the package to interface with your new database.
 
 ## SQLite Schema
 

@@ -1,5 +1,4 @@
 import sys
-from pygeodb import *
 
 if sys.version_info[:2] >= (3, 8):
     # TODO: Import directly (no need for conditional) when `python_requires = >= 3.8`
@@ -15,3 +14,7 @@ except PackageNotFoundError:  # pragma: no cover
     __version__ = "unknown"
 finally:
     del version, PackageNotFoundError
+
+from .pygeodb import *
+
+__all__ = ['GeochemDB', 'aliquot_average']
