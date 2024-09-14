@@ -26,6 +26,12 @@ This is the documentation of **pygeodb**.
 Contents
 ========
 
+And just a test here, but you should be able to do 
+
+``pygeodb.aliquot_average()``
+
+.. autofunction:: pygeodb.aliquot_average
+
 .. toctree::
    :maxdepth: 2
 
