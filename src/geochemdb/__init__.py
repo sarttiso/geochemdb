@@ -15,6 +15,6 @@ except PackageNotFoundError:  # pragma: no cover
 finally:
     del version, PackageNotFoundError
 
-from .pygeodb import *
+from .geochemdb import *
 
 __all__ = ['GeochemDB', 'aliquot_average']

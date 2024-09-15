@@ -1,7 +1,7 @@
-pygeodb
-=======
+geochemdb
+=========
 
 .. toctree::
    :maxdepth: 4
 
-   pygeodb
+   geochemdb

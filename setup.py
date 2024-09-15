@@ -1,5 +1,5 @@
 """
-    Setup file for pygeodb.
+    Setup file for geochemdb.
     Use setup.cfg to configure your project.
 
     This file was generated with PyScaffold 4.1.4.

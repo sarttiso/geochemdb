@@ -1,8 +1,8 @@
-=======
-pygeodb
-=======
+=========
+geochemdb
+=========
 
-This is the documentation of **pygeodb**.
+This is the documentation of **geochemdb**.
 
 The package description is in the repository's `readme <../../readme.md>`_.
 

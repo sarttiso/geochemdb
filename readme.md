@@ -1,4 +1,4 @@
-# pygeodb
+# geochemdb
 
 This python module provides a class and methods for adding, updating, and reading data from a SQLite database. It is geared towards a database of geochemical measurements on geologic materials, but it will be as general as possible with respect to admit a variety of data sources.
 
@@ -7,9 +7,9 @@ A minimal SQLite schema for utilizing this package is presented below and availa
 ## Getting Started
 
 ### Installation
-The `pygeodb` package can be installed with 
+The `geochemdb` package can be installed with 
 
-`pip install pygeodb`
+`pip install geochemdb`
 
 ### Create Database
 
@@ -28,7 +28,7 @@ Finally, you can just download the example database [`geochemdb_example.db`](exa
 > Samples must be added to the database manually. You can use SQLiteStudio for this.
 
 ### Tutorial
-I have prepared a [guide](guide.ipynb) as a Jupyter notebook showing the functionality of `pygeodb`. This guide is the best way to get a sense for how to use the package to interface with your new database.
+I have prepared a [guide](guide.ipynb) as a Jupyter notebook showing the functionality of `geochemdb`. This guide is the best way to get a sense for how to use the package to interface with your new database.
 
 ## SQLite Schema
 
