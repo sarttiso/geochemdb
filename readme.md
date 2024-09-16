@@ -9,14 +9,18 @@ A minimal SQLite schema for utilizing this package is presented below and availa
 ### Installation
 The `geochemdb` package can be installed with 
 
-`pip install geochemdb`
+```sh
+pip install geochemdb
+```
 
 ### Create Database
 
 #### Option 1
 I have a provided the [schema.sql](schema.sql) file for the structure shown below. You can use this to create your own, empty database by executing:
 
-`sqlite3 your-geochem-database.db < schema.sql` 
+```sh
+sqlite3 your-geochem-database.db < schema.sql
+``` 
 
 #### Option 2
 Alternatively, download and install [SQLiteStudio](https://sqlitestudio.pl/). Create a new database from the "Database/Add a Database" menu. Create the file wherever you like, and name it as you like. Right click the newly-created database in the pane on the left and click "Execute SQL from file." In the new window, select the input file by navigating to the schema.sql file I provide and click ok. 
