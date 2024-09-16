@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>geochemdb.geochemdb &#8212; geochemdb unknown documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=c058f7c8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=0ca6144b" />
+    <script src="../../_static/documentation_options.js?v=3f1b9271"></script>
+    <script src="../../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for geochemdb.geochemdb</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Interface for interacting with a SQLite database containing geochemical data.</span>
+
+<span class="sd">This module provides a class, GeochemDB, for interacting with a SQLite database, as well as helper functions for structuring and processing data from the database.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">sqlite3</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">thefuzz</span> <span class="kn">import</span> <span class="n">process</span>
+
+
+<div class="viewcode-block" id="GeochemDB">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB">[docs]</a>
+<span class="k">class</span> <span class="nc">GeochemDB</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    assumes a SQLite database with the schema describe in the package</span>
+<span class="sd">    documentation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="GeochemDB.__init__">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database_path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes a GeochemDB instance.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        database_path (str): Path to the SQLite database.</span>
+
+<span class="sd">        Attributes</span>
+<span class="sd">        ----------</span>
+<span class="sd">        _database_path (str): Internal storage for the database path.</span>
+<span class="sd">        con (sqlite3.Connection): SQLite connection object.</span>
+<span class="sd">        cursor (sqlite3.Cursor): SQLite cursor object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_database_path</span> <span class="o">=</span> <span class="n">database_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">con</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_database_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        destructor, just want to close sqlite connection</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+<div class="viewcode-block" id="GeochemDB.matchrows_strings">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.matchrows_strings">[docs]</a>
+    <span class="k">def</span> <span class="nf">matchrows_strings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">column</span><span class="p">,</span> <span class="n">score_threshold</span><span class="o">=</span><span class="mi">98</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        match to rows in a table based on a column in the row using strings</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        table : str</span>
+<span class="sd">            name of the table to match rows into.</span>
+<span class="sd">        names : arraylike</span>
+<span class="sd">            list of names to match in the table</span>
+<span class="sd">        column : str</span>
+<span class="sd">            name of column in table to do matching on</span>
+<span class="sd">        score_threshold : float</span>
+<span class="sd">            thefuzz score that matching must exceed to be a match</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        idx : array (bool)</span>
+<span class="sd">            logical indices of length len(names); true for each entry matched</span>
+<span class="sd">            in the table</span>
+<span class="sd">        sample_matches_dict : dict</span>
+<span class="sd">            closest matching sample names in database with scores exceeding the</span>
+<span class="sd">            threshold as values for keys being the provide matching sample</span>
+<span class="sd">            names</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># read table</span>
+        <span class="n">table_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql_query</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;SELECT * from </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="p">)</span>
+
+        <span class="c1"># more flexible input</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+        <span class="n">n_names</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+        <span class="c1"># if table is empty, return empty idx, sample_matches</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_names</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">table_df</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="p">{}</span>
+
+        <span class="c1"># table rows to match to</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">table_df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="c1"># matched names</span>
+        <span class="n">name_matches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">row_matches</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ii</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+            <span class="c1"># use fuzzy matching to get nearest match and score</span>
+            <span class="n">row_match</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> <span class="n">process</span><span class="o">.</span><span class="n">extractOne</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span>
+            <span class="c1"># must meet threshold</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">score_threshold</span><span class="p">:</span>
+                <span class="n">name_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">row_matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row_match</span><span class="p">)</span>
+                <span class="n">idx</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+        <span class="n">row_match_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">name_matches</span><span class="p">,</span> <span class="n">row_matches</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">idx</span><span class="p">,</span> <span class="n">row_match_dict</span></div>
+
+
+<div class="viewcode-block" id="GeochemDB.matchrows">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.matchrows">[docs]</a>
+    <span class="k">def</span> <span class="nf">matchrows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">columns</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        exactly match rows in a table based on provided values</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        table : str</span>
+<span class="sd">            name of the table to match rows into.</span>
+<span class="sd">        values : arraylike</span>
+<span class="sd">            array of values to match.</span>
+<span class="sd">        columns : arraylike</span>
+<span class="sd">            names of columns in table that contain values; must have same</span>
+<span class="sd">            length as second dimension of values</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        idx : array (bool)</span>
+<span class="sd">            logical indices of length len(names); true for each row in values</span>
+<span class="sd">            matched in the table.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># make columns array</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span>
+        <span class="c1"># make values column vector if necessary</span>
+        <span class="k">if</span> <span class="n">values</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># make sure columns and values have same shapes</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> \
+            <span class="s1">&#39;values.shape[1] should be same as number of comparison columns.&#39;</span>
+        <span class="c1"># read table</span>
+        <span class="n">table_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql_query</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;SELECT * from </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="p">)</span>
+
+        <span class="n">table_arr</span> <span class="o">=</span> <span class="n">table_df</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="c1"># indices of rows in values that are matched in table_arr</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">values</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">==</span> <span class="n">table_arr</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">idx</span></div>
+
+
+<div class="viewcode-block" id="GeochemDB.matchcolumns">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.matchcolumns">[docs]</a>
+    <span class="k">def</span> <span class="nf">matchcolumns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">df_cols</span><span class="p">,</span> <span class="n">score_threshold</span><span class="o">=</span><span class="mf">96.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Match columns of df to columns in the sqlite database</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        table : str</span>
+<span class="sd">            Table whose columns to match</span>
+<span class="sd">        df_cols : arraylike</span>
+<span class="sd">            Columns to match to columns in sqlite database</span>
+<span class="sd">        score_threshold : float</span>
+<span class="sd">            thefuzz score that matching must exceed to be a match</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        col_match_dict : dictionary</span>
+<span class="sd">            dictionary of matches where keys are df_cols and values are the sql</span>
+<span class="sd">            columns for the matched table</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># get table header</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;PRAGMA table_info(&quot;</span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s1">&quot;)&#39;</span><span class="p">)</span>
+        <span class="n">columns_info</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="c1"># sqlite columns, not sure what the last 3 are</span>
+        <span class="n">cols_sq_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;name&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;type&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;c1&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;c2&#39;</span><span class="p">,</span>
+                                           <span class="s1">&#39;c3&#39;</span><span class="p">],</span>
+                                  <span class="n">data</span><span class="o">=</span><span class="n">columns_info</span><span class="p">)</span>
+
+        <span class="n">sq_cols</span> <span class="o">=</span> <span class="n">cols_sq_df</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="c1"># matching columns dict lists (to make dict later)</span>
+        <span class="n">df_cols_matched</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">sq_cols_matched</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># do matching</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df_cols</span><span class="p">:</span>
+            <span class="n">sq_col_match</span><span class="p">,</span> <span class="n">score</span> <span class="o">=</span> \
+                <span class="n">process</span><span class="o">.</span><span class="n">extractOne</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">sq_cols</span><span class="p">)</span>
+            <span class="c1"># must meet threshold</span>
+            <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="n">score_threshold</span><span class="p">:</span>
+                <span class="n">df_cols_matched</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+                <span class="n">sq_cols_matched</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sq_col_match</span><span class="p">)</span>
+
+        <span class="n">col_match_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">df_cols_matched</span><span class="p">,</span> <span class="n">sq_cols_matched</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">col_match_dict</span></div>
+
+
+<div class="viewcode-block" id="GeochemDB.matchsamples_df">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.matchsamples_df">[docs]</a>
+    <span class="k">def</span> <span class="nf">matchsamples_df</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">score_threshold</span><span class="o">=</span><span class="mf">96.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Match samples in a DataFrame with a &#39;sample&#39; column  to existing</span>
+<span class="sd">        samples in the database</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        df : pandas.DataFrame</span>
+<span class="sd">            DataFrame with a &#39;sample&#39; column</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        df_matched : pandas.DataFrame</span>
+<span class="sd">            df with rows corresponding to matched samples</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">samples_unique</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+        <span class="c1"># now match parsed sample names against database</span>
+        <span class="n">idx</span><span class="p">,</span> <span class="n">sample_match_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matchrows_strings</span><span class="p">(</span>
+            <span class="s1">&#39;Samples&#39;</span><span class="p">,</span>
+            <span class="n">samples_unique</span><span class="p">,</span>
+            <span class="s1">&#39;name&#39;</span><span class="p">,</span>
+            <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_threshold</span><span class="p">)</span>
+
+        <span class="c1"># check which sample_names were not matched</span>
+        <span class="n">sample_names_matched</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">sample_match_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+        <span class="c1"># samples with no matches</span>
+        <span class="n">samples_not_matched</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">samples_unique</span><span class="p">)</span> <span class="o">^</span> \
+            <span class="nb">set</span><span class="p">(</span><span class="n">sample_names_matched</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples_not_matched</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Sample names not matched:</span><span class="se">\n</span><span class="si">{</span><span class="n">samples_not_matched</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># keep only rows with matched samples (indexing into df)</span>
+        <span class="n">idx_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">x</span> <span class="ow">in</span> <span class="n">sample_names_matched</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]])</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx_samples</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="c1"># add sample column, renamed</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">sample_match_dict</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="GeochemDB.insert_rows">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.insert_rows">[docs]</a>
+    <span class="k">def</span> <span class="nf">insert_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        table : str</span>
+<span class="sd">            name of table in which to insert row.</span>
+<span class="sd">        columns : arraylike</span>
+<span class="sd">            columns in table to insert new values for.</span>
+<span class="sd">        values : list</span>
+<span class="sd">            must be a list of tuples</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>\
+            <span class="s1">&#39;Must have value for each column.&#39;</span>
+
+        <span class="c1"># columns and values as string</span>
+        <span class="n">cols_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">vals_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">columns</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">cols_str</span> <span class="o">=</span> <span class="n">cols_str</span> <span class="o">+</span> <span class="n">columns</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;, &#39;</span>
+            <span class="n">vals_str</span> <span class="o">=</span> <span class="n">vals_str</span> <span class="o">+</span> <span class="s1">&#39;?, &#39;</span>
+        <span class="n">cols_str</span> <span class="o">=</span> <span class="n">cols_str</span> <span class="o">+</span> <span class="n">columns</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">vals_str</span> <span class="o">=</span> <span class="n">vals_str</span> <span class="o">+</span> <span class="s1">&#39;?&#39;</span>
+
+        <span class="c1"># sql string</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;INSERT INTO </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">cols_str</span><span class="si">}</span><span class="s1">) VALUES (</span><span class="si">{</span><span class="n">vals_str</span><span class="si">}</span><span class="s1">)&#39;</span>
+
+        <span class="c1"># execute sql</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+        <span class="c1"># commit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="GeochemDB.update_rows">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.update_rows">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_rows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">table</span><span class="p">,</span>
+                    <span class="n">match_columns</span><span class="p">,</span> <span class="n">match_values</span><span class="p">,</span>
+                    <span class="n">update_columns</span><span class="p">,</span> <span class="n">update_values</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update columns in rows in a table based on values in matching columns.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        table : str</span>
+<span class="sd">            Name of table to update rows in.</span>
+<span class="sd">        match_columns : arraylike</span>
+<span class="sd">            Columns to do matching on.</span>
+<span class="sd">        match_values : list</span>
+<span class="sd">            List of tuples of values to match rows on in match_columns. Length</span>
+<span class="sd">            of each tuple must be same as len(match_columns)</span>
+<span class="sd">        update_columns : arraylike</span>
+<span class="sd">            Columns for which to update values.</span>
+<span class="sd">        update_values : list</span>
+<span class="sd">            List of tuples with values to update in update_columns. Length of</span>
+<span class="sd">            each tuple must be same as len(update_columns)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>\
+            <span class="s1">&#39;Must have match_value for each match_column.&#39;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">update_columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">update_values</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>\
+            <span class="s1">&#39;Must have update_value for each update_column.&#39;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">update_values</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">match_values</span><span class="p">),</span> \
+            <span class="s1">&#39;update_values and match_values must be same length.&#39;</span>
+
+        <span class="c1"># string for columns to update (SET)</span>
+        <span class="n">set_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">update_columns</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">set_str</span> <span class="o">=</span> <span class="n">set_str</span> <span class="o">+</span> <span class="n">update_columns</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; = ?, &#39;</span>
+        <span class="n">set_str</span> <span class="o">=</span> <span class="n">set_str</span> <span class="o">+</span> <span class="n">update_columns</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; = ?&#39;</span>
+
+        <span class="c1"># string for columns to match on (WHERE)</span>
+        <span class="n">where_str</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">ii</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">match_columns</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">where_str</span> <span class="o">=</span> <span class="n">where_str</span> <span class="o">+</span> <span class="n">match_columns</span><span class="p">[</span><span class="n">ii</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; = ? AND &#39;</span>
+        <span class="n">where_str</span> <span class="o">=</span> <span class="n">where_str</span> <span class="o">+</span> <span class="n">match_columns</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; = ?&#39;</span>
+
+        <span class="c1"># sql string</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;UPDATE </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s1"> SET </span><span class="si">{</span><span class="n">set_str</span><span class="si">}</span><span class="s1"> WHERE </span><span class="si">{</span><span class="n">where_str</span><span class="si">}</span><span class="s1">&#39;</span>
+
+        <span class="c1"># assemble values</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">update_value</span> <span class="o">+</span> <span class="n">match_value</span> <span class="k">for</span>
+                  <span class="n">update_value</span><span class="p">,</span> <span class="n">match_value</span> <span class="ow">in</span>
+                  <span class="nb">zip</span><span class="p">(</span><span class="n">update_values</span><span class="p">,</span> <span class="n">match_values</span><span class="p">)]</span>
+
+        <span class="c1"># execute sql</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cursor</span><span class="o">.</span><span class="n">executemany</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span>
+
+        <span class="c1"># commit</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="GeochemDB.measurements_update">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.measurements_update">[docs]</a>
+    <span class="k">def</span> <span class="nf">measurements_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_measurements</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Update matching spot measurements in the Measurements table for</span>
+<span class="sd">        matching analyses. Does not attempt to add aliquots, analyses, samples,</span>
+<span class="sd">        or measurements</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        df : pandas.DataFrame</span>
+<span class="sd">            Ideally generated by iolite_tools.measurements2sql()</span>
+<span class="sd">            must have minimally the following columns:</span>
+<span class="sd">                analysis, quantity, mean, measurement_unit, uncertainty,</span>
+<span class="sd">                uncertainty_unit</span>
+<span class="sd">            optionally:</span>
+<span class="sd">                reference_material</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check for basic column structure</span>
+        <span class="n">cols_meas</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;quantity&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;measurement_unit&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;uncertainty&#39;</span><span class="p">,</span> <span class="s1">&#39;uncertainty_unit&#39;</span><span class="p">,</span> <span class="s1">&#39;reference_material&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">cols_meas</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">)),</span> \
+            <span class="s1">&#39;Missing columns in df_measurements.&#39;</span>
+
+        <span class="c1"># match measurements</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matchrows</span><span class="p">(</span><span class="s1">&#39;Measurements&#39;</span><span class="p">,</span>
+                             <span class="n">df_measurements</span><span class="p">[[</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;quantity&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                             <span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;quantity&#39;</span><span class="p">])</span>
+        <span class="c1"># if no matching measurements, stop</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No existing measurements found.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># keep matched measurements</span>
+        <span class="n">df_measurements</span> <span class="o">=</span> <span class="n">df_measurements</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">cols_match</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;quantity&#39;</span><span class="p">]</span>
+        <span class="n">match_values</span> <span class="o">=</span> <span class="n">df_measurements</span><span class="p">[</span><span class="n">cols_match</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">cols_update</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;measurement_unit&#39;</span><span class="p">,</span> <span class="s1">&#39;uncertainty&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;uncertainty_unit&#39;</span><span class="p">,</span> <span class="s1">&#39;reference_material&#39;</span><span class="p">]</span>
+        <span class="n">update_values</span> <span class="o">=</span> <span class="n">df_measurements</span><span class="p">[</span><span class="n">cols_update</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+
+        <span class="c1"># update in database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_rows</span><span class="p">(</span><span class="s1">&#39;Measurements&#39;</span><span class="p">,</span>
+                         <span class="n">cols_match</span><span class="p">,</span>
+                         <span class="n">match_values</span><span class="p">,</span>
+                         <span class="n">cols_update</span><span class="p">,</span>
+                         <span class="n">update_values</span><span class="p">)</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Updated:</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">)</span><span class="si">}</span><span class="s1"> measurements&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GeochemDB.measurements_add">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.measurements_add">[docs]</a>
+    <span class="k">def</span> <span class="nf">measurements_add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_measurements</span><span class="p">,</span> <span class="n">df_analyses</span><span class="p">,</span> <span class="n">df_aliquots</span><span class="p">,</span>
+                         <span class="n">score_threshold</span><span class="o">=</span><span class="mi">98</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add measurements for new analyses, but don&#39;t add samples.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        df_measurements : pandas.DataFrame</span>
+<span class="sd">            DataFrame suitable for reference against the Measurements table</span>
+<span class="sd">            must have have the following columns:</span>
+<span class="sd">                analysis, quantity, mean, measurement_unit, uncertainty,</span>
+<span class="sd">                uncertainty_unit</span>
+<span class="sd">        df_analyses : pandas.DataFrame</span>
+<span class="sd">            DataFrame suitable for reference against the Analyses table.</span>
+<span class="sd">            must have the following columns:</span>
+<span class="sd">            analysis, aliquot, date, insturment, technique</span>
+<span class="sd">        df_aliquots : pandas.DataFrame</span>
+<span class="sd">            DataFrame suitable for reference against the Aliquots table.</span>
+<span class="sd">            must have the following columns:</span>
+<span class="sd">            aliquot, sample, material</span>
+<span class="sd">        score_threshold : int</span>
+<span class="sd">            0-100, scoring threshold for matching sample names. defaults to 98 </span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># check for basic column structure</span>
+        <span class="n">cols_meas</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;quantity&#39;</span><span class="p">,</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;measurement_unit&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;uncertainty&#39;</span><span class="p">,</span> <span class="s1">&#39;uncertainty_unit&#39;</span><span class="p">,</span> <span class="s1">&#39;reference_material&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">cols_meas</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">)),</span> \
+            <span class="s1">&#39;Missing columns in df_measurements.&#39;</span>
+        <span class="n">cols_analyses</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;aliquot&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;date&#39;</span><span class="p">,</span> <span class="s1">&#39;instrument&#39;</span><span class="p">,</span> <span class="s1">&#39;technique&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">cols_analyses</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">df_analyses</span><span class="p">)),</span> \
+            <span class="s1">&#39;Missing columns in df_analyses.&#39;</span>
+        <span class="n">cols_aliquots</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;aliquot&#39;</span><span class="p">,</span> <span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="s1">&#39;material&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">cols_aliquots</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">df_aliquots</span><span class="p">)),</span> \
+            <span class="s1">&#39;Missing columns in df_aliquots.&#39;</span>
+
+        <span class="c1"># make sure that all analyses in df_measurements are also in</span>
+        <span class="c1"># df_analyses</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">df_analyses</span><span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">==</span> \
+            <span class="nb">set</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()),</span> \
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;All analyses in df_analyses must be present in</span>
+<span class="sd">                df_measurements, and vice versa.&quot;&quot;&quot;</span>
+
+        <span class="c1"># make sure that all aliquots in df_analyses are also in df_aliquots</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">df_analyses</span><span class="p">[</span><span class="s1">&#39;aliquot&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">==</span> \
+            <span class="nb">set</span><span class="p">(</span><span class="n">df_aliquots</span><span class="p">[</span><span class="s1">&#39;aliquot&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()),</span> \
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;All aliquots in df_analyses must be present in</span>
+<span class="sd">                df_aliquots, and vice versa.&quot;&quot;&quot;</span>
+
+        <span class="c1"># match samples</span>
+        <span class="n">df_aliquots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matchsamples_df</span><span class="p">(</span><span class="n">df_aliquots</span><span class="p">,</span> <span class="n">score_threshold</span><span class="o">=</span><span class="n">score_threshold</span><span class="p">)</span>
+        <span class="c1"># if no matching samples, stop</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_aliquots</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No samples matched.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="c1"># remove analyses for aliquots with missing samples</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">df_analyses</span><span class="p">[</span><span class="s1">&#39;aliquot&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">df_aliquots</span><span class="p">[</span><span class="s1">&#39;aliquot&#39;</span><span class="p">])</span>
+        <span class="n">df_analyses</span> <span class="o">=</span> <span class="n">df_analyses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="c1"># remove measurements with missing samples</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">df_measurements</span><span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">df_analyses</span><span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">])</span>
+        <span class="n">df_measurements</span> <span class="o">=</span> <span class="n">df_measurements</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="c1"># distinguish between existing and new measurements</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matchrows</span><span class="p">(</span><span class="s1">&#39;Measurements&#39;</span><span class="p">,</span>
+                             <span class="n">df_measurements</span><span class="p">[[</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;quantity&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                             <span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span> <span class="s1">&#39;quantity&#39;</span><span class="p">])</span>
+        <span class="c1"># if all measurements are already in the database, stop</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;All measurements already in database, use &#39;</span> <span class="o">+</span>
+                  <span class="s1">&#39;measurements_update() instead.&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="c1"># ignore existing measurements</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Existing measurements found, ignoring.&#39;</span><span class="p">)</span>
+            <span class="c1"># remove from df_measurements</span>
+            <span class="n">df_measurements</span> <span class="o">=</span> <span class="n">df_measurements</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">~</span><span class="n">idx</span><span class="p">]</span>
+            <span class="c1"># keep only corresponding analyses</span>
+            <span class="n">analyses_unique</span> <span class="o">=</span> <span class="n">df_measurements</span><span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">()</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="n">df_analyses</span><span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">analyses_unique</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">df_analyses</span> <span class="o">=</span> <span class="n">df_analyses</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="c1"># create necessary aliquots</span>
+        <span class="n">idx_aliquots</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">matchrows</span><span class="p">(</span><span class="s1">&#39;Aliquots&#39;</span><span class="p">,</span>
+                                       <span class="n">df_aliquots</span><span class="p">[</span><span class="s1">&#39;aliquot&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                       <span class="s1">&#39;aliquot&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">idx_aliquots</span><span class="p">):</span>
+            <span class="n">cur_values</span> <span class="o">=</span> <span class="n">df_aliquots</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_aliquots</span><span class="p">][</span><span class="n">cols_aliquots</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert_rows</span><span class="p">(</span><span class="s1">&#39;Aliquots&#39;</span><span class="p">,</span>
+                             <span class="n">cols_aliquots</span><span class="p">,</span>
+                             <span class="n">cur_values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="c1"># create necessary analyses</span>
+        <span class="n">idx_analyses</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">matchrows</span><span class="p">(</span><span class="s1">&#39;Analyses&#39;</span><span class="p">,</span>
+                                       <span class="n">df_analyses</span><span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+                                       <span class="s1">&#39;analysis&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">idx_analyses</span><span class="p">):</span>
+            <span class="n">cur_values</span> <span class="o">=</span> <span class="n">df_analyses</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_analyses</span><span class="p">][</span><span class="n">cols_analyses</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">insert_rows</span><span class="p">(</span><span class="s1">&#39;Analyses&#39;</span><span class="p">,</span>
+                             <span class="n">cols_analyses</span><span class="p">,</span>
+                             <span class="n">cur_values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="c1"># then add measurements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">insert_rows</span><span class="p">(</span><span class="s1">&#39;Measurements&#39;</span><span class="p">,</span>
+                         <span class="n">cols_meas</span><span class="p">,</span>
+                         <span class="n">df_measurements</span><span class="p">[</span><span class="n">cols_meas</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Added:</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">idx_aliquots</span><span class="p">)</span><span class="si">}</span><span class="s1"> aliquots,</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">idx_analyses</span><span class="p">)</span><span class="si">}</span><span class="s1"> analyses,</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">)</span><span class="si">}</span><span class="s1"> measurements&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="GeochemDB.measurements_by_sample">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.GeochemDB.measurements_by_sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">measurements_by_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        return a DataFrame with all measurements corresponding to the requested</span>
+<span class="sd">        samples</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        samples : str or arraylike</span>
+<span class="sd">            sample or samples for which to retrieve measurements</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        df : pandas.DataFrame</span>
+<span class="sd">            all measurements associated with the sample.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
+
+        <span class="c1"># get aliquots matching samples</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;SELECT aliquot, sample FROM Aliquots WHERE sample = &quot;</span><span class="si">{</span><span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&quot;&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;SELECT aliquot, sample FROM Aliquots WHERE sample in </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">df_aliquots</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql_query</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="p">)</span>
+        <span class="n">aliquots</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">df_aliquots</span><span class="p">[</span><span class="s1">&#39;aliquot&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="c1"># then get matching analyses and measurements</span>
+        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;SELECT analysis, aliquot FROM Analyses WHERE aliquot in </span><span class="si">{</span><span class="n">aliquots</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">df_analyses</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql_query</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="p">)</span>
+        <span class="n">analyses</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">df_analyses</span><span class="p">[</span><span class="s1">&#39;analysis&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+        <span class="n">sql</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;SELECT * FROM Measurements WHERE analysis in </span><span class="si">{</span><span class="n">analyses</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">df_measurements</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_sql_query</span><span class="p">(</span><span class="n">sql</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">con</span><span class="p">)</span>
+
+        <span class="c1"># add aliquot and sample information</span>
+        <span class="n">df_analyses</span> <span class="o">=</span> <span class="n">df_analyses</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df_aliquots</span><span class="p">,</span>
+                                        <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                                        <span class="n">left_on</span><span class="o">=</span><span class="s1">&#39;aliquot&#39;</span><span class="p">,</span>
+                                        <span class="n">right_on</span><span class="o">=</span><span class="s1">&#39;aliquot&#39;</span><span class="p">)</span>
+        <span class="n">df_measurements</span> <span class="o">=</span> <span class="n">df_measurements</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">df_analyses</span><span class="p">,</span>
+                                                <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">,</span>
+                                                <span class="n">left_on</span><span class="o">=</span><span class="s1">&#39;analysis&#39;</span><span class="p">,</span>
+                                                <span class="n">right_on</span><span class="o">=</span><span class="s1">&#39;analysis&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">df_measurements</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="aliquot_average">
+<a class="viewcode-back" href="../../geochemdb.html#geochemdb.aliquot_average">[docs]</a>
+<span class="k">def</span> <span class="nf">aliquot_average</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    given a dataframe of measurements as generated by</span>
+<span class="sd">    :py:meth:`GeochemDB.measurements_by_sample()`, gather measurements by aliquot, averaging</span>
+<span class="sd">    duplicate measurements. Assumes that duplicates have the same units.</span>
+
+<span class="sd">    to do:</span>
+<span class="sd">        implement more robust duplicate checking</span>
+<span class="sd">        responsible uncertainty propagation</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df_measurements (pd.DataFrame): Dataframe of measurements output by :py:meth:`GeochemDB.measurements_by_sample()`.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.DataFrame: DataFrame with geochemical measurements averaged by aliquot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">df_aliquots</span> <span class="o">=</span> \
+        <span class="n">df_measurements</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;quantity&#39;</span><span class="p">],</span>
+                                    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;aliquot&#39;</span><span class="p">,</span> <span class="s1">&#39;sample&#39;</span><span class="p">],</span>
+                                    <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;mean&#39;</span><span class="p">,</span> <span class="s1">&#39;uncertainty&#39;</span><span class="p">],</span>
+                                    <span class="n">aggfunc</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>
+                                             <span class="s1">&#39;uncertainty&#39;</span><span class="p">:</span> <span class="s1">&#39;max&#39;</span><span class="p">})</span>
+    <span class="n">df_aliquots</span> <span class="o">=</span> <span class="n">df_aliquots</span><span class="o">.</span><span class="n">reorder_levels</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">df_aliquots</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">geochemdb</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">Module Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Adrian Tasistro-Hart.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.0.2</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
