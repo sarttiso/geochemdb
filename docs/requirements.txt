@@ -6,3 +6,6 @@ sphinx>=3.2.1
 numpy
 pandas
 thefuzz
+nbsphinx
+myst-nb
+sphinx-mdinclude
