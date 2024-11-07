@@ -1,10 +1,4 @@
-=========
-geochemdb
-=========
-
-This is the documentation of **geochemdb**.
-
-The package description is in the repository's `readme <https://github.com/sarttiso/geochemdb/blob/main/readme.md>`_.
+.. mdinclude:: ../readme.md
 
 Contents
 ========
@@ -12,6 +6,7 @@ Contents
 .. toctree::
    :maxdepth: 2
 
+   Guide <guide>
    Module Reference <modules>
    License <license>
    Changelog <changelog>

@@ -72,6 +72,18 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.mathjax",
     "sphinx.ext.napoleon",
+    "sphinx_mdinclude",
+    "myst_nb"
+]
+
+# myst_nb config
+nb_execution_mode = "off"
+nb_execution_output_dir = "notebook_output"
+myst_enable_extensions = [
+    "amsmath",          # For math environments like align
+    "dollarmath",       # For dollar-based math (e.g., $...$)
+    "colon_fence",      # For admonitions like :::note
+    "html_admonition"
 ]
 
 # autodoc_default_flags = ['members', 'undoc-members', 'imported-members']
@@ -127,7 +139,7 @@ release = version
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".venv"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", ".venv", ".virtual_documents/*" , "jupyter_execute", "**/jupyter_execute/*"]
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 # default_role = None
