@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>geochemdb guide &#8212; geochemdb unknown documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=0ca6144b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <script src="_static/documentation_options.js?v=3f1b9271"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="geochemdb" href="modules.html" />
+    <link rel="prev" title="geochemdb" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section class="tex2jax_ignore mathjax_ignore" id="geochemdb-guide">
+<h1><code class="docutils literal notranslate"><span class="pre">geochemdb</span></code> guide<a class="headerlink" href="#geochemdb-guide" title="Link to this heading">¶</a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">geochemdb</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This notebook provides example utilization of the module with some example zircon laser ablation data reduced by Iolite 4. You will also need to have <a class="reference external" href="https://github.com/sarttiso/iolite_tools">iolite_tools</a> to facilitate processing the example dataset into dataframes that are ready for <code class="docutils literal notranslate"><span class="pre">geochemdb</span></code>.</p>
+<p>This notebook assumes that you are working from the preconfigured example database <code class="docutils literal notranslate"><span class="pre">geochemdb_example.db</span></code>, which is in the <em>example_data</em> directory.</p>
+<p>For use with your own data, you will also need to have properly configured a database. The <a class="reference internal" href="#schema.sql"><span class="xref myst">schema.sql</span></a> is available in the repository. For your own database, you can use the schema to create an empty database file with the correct tables and relationships by running</p>
+<p><code class="docutils literal notranslate"><span class="pre">sqlite3</span> <span class="pre">your-geochem-database.db</span> <span class="pre">&lt;</span> <span class="pre">schema.sql</span></code></p>
+<p>at a command line after having installed sqlite3 (which can be done via anaconda).</p>
+<p>Alternatively, you can copy <code class="docutils literal notranslate"><span class="pre">geochemdb_example.db</span></code> and edit it using a program like the free <a class="reference external" href="https://sqlitestudio.pl/">SQLiteStudio</a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">iolite_tools</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="create-geochemdb-object">
+<h2>Create <code class="docutils literal notranslate"><span class="pre">GeochemDB</span></code> Object<a class="headerlink" href="#create-geochemdb-object" title="Link to this heading">¶</a></h2>
+<p>The core class for the <code class="docutils literal notranslate"><span class="pre">geochemdb</span></code> module is <code class="docutils literal notranslate"><span class="pre">GeochemDB</span></code>, which generates an object that allows you to interface with a geochemical SQLite database.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">example_data</span></code> directory can be found at the root of the repository on <a class="reference external" href="https://github.com/sarttiso/geochemdb">Github</a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">database_path</span> <span class="o">=</span> <span class="s1">&#39;example_data/geochemdb_example.db&#39;</span>
+<span class="n">db</span> <span class="o">=</span> <span class="n">geochemdb</span><span class="o">.</span><span class="n">GeochemDB</span><span class="p">(</span><span class="n">database_path</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This object allows you to</p>
+<ul class="simple">
+<li><p>add</p></li>
+<li><p>update</p></li>
+<li><p>retrieve</p></li>
+</ul>
+<p>measurements from the database.</p>
+<p>This guide walks through each of these steps.</p>
+</section>
+<section id="adding-measurements">
+<h2>Adding Measurements<a class="headerlink" href="#adding-measurements" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">GeochemDB.measurements_add()</span></code> adds new measurements to the <em>Measurements</em> table of the database.</p>
+<p><strong>Note:</strong> <em><code class="docutils literal notranslate"><span class="pre">GeochemDB.measurements_add()</span></code> does not add missing samples to the <code class="docutils literal notranslate"><span class="pre">Samples</span></code> table.</em> Samples should be added to the database manually with all of their corresponding metadata.</p>
+<p>To add measurements to the database, you have to provide three dataframes:</p>
+<ol class="arabic simple">
+<li><p><strong>measurements</strong> : This dataframe contains geochemical measurements as rows, alongside analysis names. Measurements are the values of geochemical concentrations or ratios, along with their uncertainties.</p></li>
+<li><p><strong>analyses</strong> : This dataframe lists analyses and metadata. An analysis refers to measurement of an aliquot by a machine. All analyses referenced in measurements should be present here. No other analyses should be present.</p></li>
+<li><p><strong>aliquots</strong> : This dataframe contains aliquots to which analyses belong. An aliquot is a portion of a sample. All aliquots referenced in the analsyes dataframe should be present here. No other aliquots should be present.</p></li>
+</ol>
+<p>In the example here, measurements are trace element, U, and Pb concentrations in zircons via laser ablation. These measurements were gathered via the split-stream configuration at the UCSB petrochronology lab. This procedure takes the aerosol generated via laser ablation and splits it, delivering portions to different mass spectrometers (one to measure trace elements, another U and Pb).</p>
+<p>In this case, an aliquot refers to the aerosol generated by the laser, which is designated by a spot number (e.g., <em>S_z48</em>). Each aliquot has two analyses: one for trace elements and another for U/Pb. Each analysis has as many measurements as the mass spectrometers were configured to collect.</p>
+<p>The code below prepares the necessaary dataframes using example LASS-ICPMS datasets. I’ve developed <code class="docutils literal notranslate"><span class="pre">iolite_tools</span></code> to facilitate processing these reduced data from excel spreadsheets.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">iolite_tools</span><span class="o">.</span><span class="n">excel2measurements</span><span class="p">(</span><span class="s1">&#39;example_data/2023-03_run-5_trace.xlsx&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;2023-03&#39;</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;trace&#39;</span><span class="p">)</span>
+
+<span class="n">df_measurements</span> <span class="o">=</span> <span class="n">iolite_tools</span><span class="o">.</span><span class="n">measurements2sql</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">refmat</span><span class="o">=</span><span class="s1">&#39;91500&#39;</span><span class="p">)</span>
+<span class="n">df_analyses</span> <span class="o">=</span> <span class="n">iolite_tools</span><span class="o">.</span><span class="n">analyses2sql</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="s1">&#39;2023-03-17&#39;</span><span class="p">,</span>
+                                        <span class="n">instrument</span><span class="o">=</span><span class="s1">&#39;Nu Plasma 3D&#39;</span><span class="p">,</span>
+                                        <span class="n">technique</span><span class="o">=</span><span class="s1">&#39;LASS ICPMS&#39;</span><span class="p">)</span>
+<span class="n">df_aliquots</span> <span class="o">=</span> <span class="n">iolite_tools</span><span class="o">.</span><span class="n">aliquots2sql</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="s1">&#39;zircon&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>While <code class="docutils literal notranslate"><span class="pre">iolite_tools</span></code> is specifically designed for this particular type of data, the structure of the dataframes above is what is necessary for adding data to the database. As long as you can produce these dataframes from your own reduced datasets, then you will be able to add your own data.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You will have to make sure that the auxiliary tables have been appropriately populated with the relevant values before trying to add measurements. These tables include <em>MeasurementUnits</em>, <em>Quantities</em>, <em>QuantitiesMeasurementUnits</em>, <em>Instruments</em>, <em>Techniques</em>, and <em>Materials</em>. See <a class="reference internal" href="#readme.md"><span class="xref myst">readme</span></a> for more information. You will notice that the columns in the dataframes generated above reference these types of information, which is all about facilitating the metadata collection and standardization that is often lacking. The <code class="docutils literal notranslate"><span class="pre">geochem_example.db</span></code> database already has the values added, but you may have to add your own depending on your data collection and reduction practices.</p>
+</div>
+<p>Now that we have made the <em>measurements</em>, <em>analyses</em>, and <em>aliquots</em> dataframes, we can use <code class="docutils literal notranslate"><span class="pre">db.measurements_add()</span></code> to add them to the database.</p>
+<p>Prior to running this function, however, you can check to see what samples will be matched based on the strings in the dataframes. The code uses fuzzy string matching on sample names, so it can be convenient to run <code class="docutils literal notranslate"><span class="pre">db.matchrows_strings()</span></code> to ensure that samples are being matched appropriately.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db</span><span class="o">.</span><span class="n">matchrows_strings</span><span class="p">(</span><span class="s1">&#39;Samples&#39;</span><span class="p">,</span> <span class="n">df_aliquots</span><span class="p">[</span><span class="s1">&#39;sample&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">unique</span><span class="p">(),</span> <span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">score_threshold</span><span class="o">=</span><span class="mi">95</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(array([False, False,  True, False, False, False]),
+ {&#39;AT2310 16 4&#39;: &#39;AT2310 16.4&#39;})
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can see that only sample AT2310 16.4 is matched since it’s the only one in the database. If samples do not match, then they either are not present in the database and need to be added, or the sample names in the dataframes differ too much from the sample names in the database. The degree of string similarity for the fuzzy name matching is controlled by the <code class="docutils literal notranslate"><span class="pre">score_threshold</span></code> parameter, which can be decreased to match more dissimilar strings. In this case, a threshold of 95 is sufficient to match ‘AT2310 16 4’ to ‘AT2310 16.4’.</p>
+<p>Once you’re satisfied that the dataframes are ready and sample names will match, you can add the measurements to the database.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db</span><span class="o">.</span><span class="n">measurements_add</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">,</span> <span class="n">df_analyses</span><span class="p">,</span> <span class="n">df_aliquots</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Sample names not matched:
+{&#39;91500&#39;, &#39;Ples&#39;, &#39;GJ1&#39;, &#39;AT22 FRAN 17 29&#39;, &#39;NIST612&#39;}
+Added:
+122 aliquots,
+122 analyses,
+3416 measurements
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="updating-measurements">
+<h2>Updating Measurements<a class="headerlink" href="#updating-measurements" title="Link to this heading">¶</a></h2>
+<p>You might find that you’ve improved your data reduction at some point in the future, and you have new values for measurements from existing analyses. If you have already added these measurements to the database, you can update them using <code class="docutils literal notranslate"><span class="pre">db.measurements_update()</span></code>. Note that analysis names must be identical to the existing analyses in the database.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">db</span><span class="o">.</span><span class="n">measurements_update</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Updated:
+3416 measurements
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="get-measurements-by-sample">
+<h2>Get Measurements by Sample<a class="headerlink" href="#get-measurements-by-sample" title="Link to this heading">¶</a></h2>
+<p>Retrieving measurements from the database can be done with <code class="docutils literal notranslate"><span class="pre">db.measurements_by_sample()</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_measurements</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">measurements_by_sample</span><span class="p">(</span><span class="s1">&#39;AT2310 16.4&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>This function returns a dataframe with all measurements as rows, whereas most end-users will likely want measured quantities in columns. The <code class="docutils literal notranslate"><span class="pre">geochemdb.aliquot_average()</span></code> function generates such a dataframe by averaging aliquots with repeat measurements of any quantities.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df_aliquots</span> <span class="o">=</span> <span class="n">geochemdb</span><span class="o">.</span><span class="n">aliquot_average</span><span class="p">(</span><span class="n">df_measurements</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">geochemdb</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#create-geochemdb-object">Create <code class="docutils literal notranslate"><span class="pre">GeochemDB</span></code> Object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#adding-measurements">Adding Measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-measurements">Updating Measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#get-measurements-by-sample">Get Measurements by Sample</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">geochemdb</a></li>
+      <li>Next: <a href="modules.html" title="next chapter">geochemdb</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Adrian Tasistro-Hart.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/guide.ipynb.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

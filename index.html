@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>geochemdb &#8212; geochemdb unknown documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=0ca6144b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <script src="_static/documentation_options.js?v=3f1b9271"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="geochemdb guide" href="guide.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="geochemdb">
+<h1>geochemdb<a class="headerlink" href="#geochemdb" title="Link to this heading">¶</a></h1>
+<p>This python module provides a class and methods for adding, updating, and reading data from a SQLite database. It is geared towards a database of geochemical measurements on geologic materials, but it will be as general as possible with respect to admit a variety of data sources.</p>
+<p>A minimal SQLite schema for utilizing this package is presented below and available in this repository as <a class="reference external" href="schema.sql">schema.sql</a>. <a class="reference external" href="https://sqlitestudio.pl/">SQLiteStudio</a> provides a convenient way to access and modify SQLite databases.</p>
+<section id="getting-started">
+<h2>Getting Started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
+<section id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">geochemdb</span></code> package can be installed with</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>geochemdb
+</pre></div>
+</div>
+</section>
+<section id="create-database">
+<h3>Create Database<a class="headerlink" href="#create-database" title="Link to this heading">¶</a></h3>
+<section id="option-1">
+<h4>Option 1<a class="headerlink" href="#option-1" title="Link to this heading">¶</a></h4>
+<p>I have a provided the <a class="reference external" href="schema.sql">schema.sql</a> file for the structure shown below. You can use this to create your own, empty database by executing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sqlite3<span class="w"> </span>your-geochem-database.db<span class="w"> </span>&lt;<span class="w"> </span>schema.sql
+</pre></div>
+</div>
+</section>
+<section id="option-2">
+<h4>Option 2<a class="headerlink" href="#option-2" title="Link to this heading">¶</a></h4>
+<p>Alternatively, download and install <a class="reference external" href="https://sqlitestudio.pl/">SQLiteStudio</a>. Create a new database from the “Database/Add a Database” menu. Create the file wherever you like, and name it as you like. Right click the newly-created database in the pane on the left and click “Execute SQL from file.” In the new window, select the input file by navigating to the schema.sql file I provide and click ok.</p>
+</section>
+<section id="option-3">
+<h4>Option 3<a class="headerlink" href="#option-3" title="Link to this heading">¶</a></h4>
+<p>Finally, you can just download the example database <span class="raw-html-md"><a href="example_data/geochemdb_example.db"><code class="docutils literal"><span class="pre">geochemdb_example.db</span></code></a></span> in the <em>example_data</em> folder.</p>
+<blockquote>
+<div><p>[!NOTE] <span class="raw-html-md"><br /></span>
+Samples must be added to the database manually. You can use SQLiteStudio for this.</p>
+</div></blockquote>
+</section>
+</section>
+<section id="tutorial">
+<h3>Tutorial<a class="headerlink" href="#tutorial" title="Link to this heading">¶</a></h3>
+<p>I have prepared a <a class="reference external" href="https://adrian.tasistro-hart.com/geochemdb/guide">guide</a> showing the functionality of <code class="docutils literal notranslate"><span class="pre">geochemdb</span></code>. This guide is the best way to get a sense for how to use the package to interface with your new database.</p>
+</section>
+</section>
+<section id="sqlite-schema">
+<h2>SQLite Schema<a class="headerlink" href="#sqlite-schema" title="Link to this heading">¶</a></h2>
+<p>The schema presented below is largely inspired by the following references:</p>
+<blockquote>
+<div><p>Chamberlain, K.J., Lehnert, K.A., McIntosh, I.M., Morgan, D.J., and Wörner, G., 2021, Time to change the data culture in geochemistry: Nature Reviews Earth &amp; Environment, v. 2, p. 737–739, doi:10.1038/s43017-021-00237-w.</p>
+<p>Staudigel, H. et al., 2003, Electronic data publication in geochemistry: Geochemistry, Geophysics, Geosystems, v. 4, doi:10.1029/2002GC000314.</p>
+</div></blockquote>
+<p>Full implementation of the metadata collection described therein is a work-in-progress, but this schema captures the most important elements.</p>
+<a class="reference external image-reference" href="images/schema.png"><img alt="schema" src="images/schema.png" />
+</a>
+<section id="primary-tables">
+<h3>Primary Tables<a class="headerlink" href="#primary-tables" title="Link to this heading">¶</a></h3>
+<p>The geochemical data are assumed to follow a hierarchy that progresses from
+<strong>sample → aliquot → analysis → measurement</strong>. Various metadata are tabulated at each level. This structure is presented here and in the <a class="reference external" href="guide.ipynb">guide</a> with the example of split-stream laser ablation mass spectrometry (LASS-ICPMS) of zircon.</p>
+<p><strong>``Samples``</strong></p>
+<p>Samples are uniquely identified by names and contain metadata. Minimal metadata for a
+sample include:</p>
+<ul class="simple">
+<li><p>latitude and longitude</p></li>
+<li><p>horizontal precision</p></li>
+<li><p>elevation</p></li>
+<li><p>vertical precision</p></li>
+</ul>
+<p>In this example, the sample would be the rock from which zircons are separated.</p>
+<p><strong>``Aliquots``</strong></p>
+<p>Aliquots reflect portions of a sample and have a many-to-one (foreign key) relationship with the <code class="docutils literal notranslate"><span class="pre">Samples</span></code> table. Minimal metadata for an aliquot include:</p>
+<ul class="simple">
+<li><p>material (e.g., whole rock, zircon, etc.)</p></li>
+</ul>
+<p>In the example, an aliquot would be a single laser ablation spot on an individual zircon. In general, an aliquot is a part of a sample that undergoes analysis.</p>
+<p><strong>``Analyses``</strong></p>
+<p>Analyses are analytical events that yield measurements. In the case of LASS-ICPMS, a single spot (aliquot) yields analyses on two separate instruments: one that measures trace elements, another that measures U and Pb. Analyses must include:</p>
+<ul class="simple">
+<li><p>date</p></li>
+<li><p>instrument</p></li>
+<li><p>technique</p></li>
+</ul>
+<p><strong>``Measurements``</strong></p>
+<p>Measurements store the geochemical data gathered during analyses. A row exists in the
+<code class="docutils literal notranslate"><span class="pre">Measurements</span></code> table for each element, ratio, or other value measured/derived during an
+analysis. For now, measurements are uniquely identifiable soley by the analysis and the
+quantity being measured. Measurements must include:</p>
+<ul class="simple">
+<li><p>measurement unit</p></li>
+<li><p>uncertainty unit</p></li>
+<li><p>reference material</p></li>
+</ul>
+</section>
+<section id="auxiliary-tables">
+<h3>Auxiliary Tables<a class="headerlink" href="#auxiliary-tables" title="Link to this heading">¶</a></h3>
+<p>The following tables provide valid values and combinations of values for several of the metadata fields described above to facilitate data validation and consistency.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Quantities</span></code></p>
+<p>This table lists valid quantities that can be included in <code class="docutils literal notranslate"><span class="pre">Measurements</span></code>, such as elemental concentrations, ratios, and error correlations.</p>
+<p><code class="docutils literal notranslate"><span class="pre">MeasurementUnits</span></code></p>
+<p>This table specifies valid units for <code class="docutils literal notranslate"><span class="pre">Measurements</span></code>, such as ppm, wt pct, etc.</p>
+<p><code class="docutils literal notranslate"><span class="pre">QuantitiesMeasurementUnits</span></code></p>
+<p>This table encodes a many-to-many relationship between <code class="docutils literal notranslate"><span class="pre">Quantities</span></code> and
+<code class="docutils literal notranslate"><span class="pre">MeasurementUnits</span></code>, thereby specifying the valid combinations of the two values. For example, ratios cannot be measured in ppm, and so the only valid <code class="docutils literal notranslate"><span class="pre">measurement_unit</span></code> for the <code class="docutils literal notranslate"><span class="pre">quantity</span></code> U/Th would be a ratio.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Instruments</span></code></p>
+<p>This table records the instruments that yield measurements during analyses. Every analysis must have an instrument.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Techniques</span></code></p>
+<p>Valid analytical techniques are tabulated here. The same instrument can be used in different ways; for example ICPMS measurements can be done on laser ablation aerosols or solutions. This table records these methodological distinctions.</p>
+<p><code class="docutils literal notranslate"><span class="pre">Materials</span></code></p>
+<p>Rock samples can yield various materials. An aliquot is a particular material, for example a zircon, and this table contains all the valid materials that aliquots can be.</p>
+</section>
+</section>
+</section>
+<section id="contents">
+<h1>Contents<a class="headerlink" href="#contents" title="Link to this heading">¶</a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guide.html">Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="guide.html#create-geochemdb-object">Create <code class="docutils literal notranslate"><span class="pre">GeochemDB</span></code> Object</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide.html#adding-measurements">Adding Measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide.html#updating-measurements">Updating Measurements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="guide.html#get-measurements-by-sample">Get Measurements by Sample</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="geochemdb.html">geochemdb package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="changelog.html#version-1-0">Version 1.0</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Link to this heading">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+</ul>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">geochemdb</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="guide.html">Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modules.html">Module Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="guide.html" title="next chapter"><code class="docutils literal notranslate"><span class="pre">geochemdb</span></code> guide</a></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Adrian Tasistro-Hart.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
