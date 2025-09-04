@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>geochemdb package &#8212; geochemdb unknown documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=0ca6144b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <script src="_static/documentation_options.js?v=3f1b9271"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="License" href="license.html" />
+    <link rel="prev" title="geochemdb" href="modules.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="geochemdb-package">
+<h1>geochemdb package<a class="headerlink" href="#geochemdb-package" title="Link to this heading">¶</a></h1>
+<section id="module-geochemdb">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-geochemdb" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">geochemdb.</span></span><span class="sig-name descname"><span class="pre">GeochemDB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3.12/library/functions.html#object" title="(in Python v3.12)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>assumes a SQLite database with the schema describe in the package
+documentation.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.__init__" title="Link to this definition">¶</a></dt>
+<dd><p>Initializes a GeochemDB instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>(</strong><strong>str</strong><strong>)</strong> (<em>database_path</em>)</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB._database_path">
+<span class="sig-name descname"><span class="pre">_database_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geochemdb.GeochemDB._database_path" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Internal storage for the database path.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.con">
+<span class="sig-name descname"><span class="pre">con</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sqlite3.Connection</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geochemdb.GeochemDB.con" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SQLite connection object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.cursor">
+<span class="sig-name descname"><span class="pre">cursor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sqlite3.Cursor</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#geochemdb.GeochemDB.cursor" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>SQLite cursor object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.get_aliquots">
+<span class="sig-name descname"><span class="pre">get_aliquots</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.get_aliquots"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.get_aliquots" title="Link to this definition">¶</a></dt>
+<dd><p>List aliquots in the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None.</strong></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>aliquots</strong> – Array of aliquot names in the database.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.get_aliquots_samples">
+<span class="sig-name descname"><span class="pre">get_aliquots_samples</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.get_aliquots_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.get_aliquots_samples" title="Link to this definition">¶</a></dt>
+<dd><p>List samples and aliquots in the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None.</strong></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>df</strong> – DataFrame with columns ‘sample’ and ‘aliquot’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)">pandas.DataFrame</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.get_samples">
+<span class="sig-name descname"><span class="pre">get_samples</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.get_samples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.get_samples" title="Link to this definition">¶</a></dt>
+<dd><p>List samples in the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None.</strong></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>samples</strong> – Array of sample names in the database.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.insert_rows">
+<span class="sig-name descname"><span class="pre">insert_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.insert_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.insert_rows" title="Link to this definition">¶</a></dt>
+<dd><p>Insert rows into table.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – name of table in which to insert row.</p></li>
+<li><p><strong>columns</strong> (<em>arraylike</em>) – columns in table to insert new values for.</p></li>
+<li><p><strong>values</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – must be a list of tuples</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.matchcolumns">
+<span class="sig-name descname"><span class="pre">matchcolumns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_cols</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">96.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.matchcolumns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.matchcolumns" title="Link to this definition">¶</a></dt>
+<dd><p>Match columns of df to columns in the sqlite database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – Table whose columns to match</p></li>
+<li><p><strong>df_cols</strong> (<em>arraylike</em>) – Columns to match to columns in sqlite database</p></li>
+<li><p><strong>score_threshold</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – thefuzz score that matching must exceed to be a match</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>col_match_dict</strong> – dictionary of matches where keys are df_cols and values are the sql
+columns for the matched table</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dictionary</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.matchrows">
+<span class="sig-name descname"><span class="pre">matchrows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.matchrows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.matchrows" title="Link to this definition">¶</a></dt>
+<dd><p>exactly match rows in a table based on provided values</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – name of the table to match rows into.</p></li>
+<li><p><strong>values</strong> (<em>arraylike</em>) – array of values to match.</p></li>
+<li><p><strong>columns</strong> (<em>arraylike</em>) – names of columns in table that contain values; must have same
+length as second dimension of values</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>idx</strong> – logical indices of length len(names); true for each row in values
+matched in the table.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>array (<a class="reference external" href="https://docs.python.org/3.12/library/functions.html#bool" title="(in Python v3.12)">bool</a>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.matchrows_strings">
+<span class="sig-name descname"><span class="pre">matchrows_strings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.matchrows_strings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.matchrows_strings" title="Link to this definition">¶</a></dt>
+<dd><p>match to rows in a table based on a column in the row using strings</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – name of the table to match rows into.</p></li>
+<li><p><strong>names</strong> (<em>arraylike</em>) – list of names to match in the table</p></li>
+<li><p><strong>column</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – name of column in table to do matching on</p></li>
+<li><p><strong>score_threshold</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/functions.html#float" title="(in Python v3.12)"><em>float</em></a>) – thefuzz score that matching must exceed to be a match</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>idx</strong> (<em>array (bool)</em>) – logical indices of length len(names); true for each entry matched
+in the table</p></li>
+<li><p><strong>sample_matches_dict</strong> (<em>dict</em>) – closest matching sample names in database with scores exceeding the
+threshold as values for keys being the provide matching sample
+names</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.matchsamples_df">
+<span class="sig-name descname"><span class="pre">matchsamples_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">96.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.matchsamples_df"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.matchsamples_df" title="Link to this definition">¶</a></dt>
+<dd><p>Match samples in a DataFrame with a ‘sample’ column  to existing
+samples in the database</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)"><em>pandas.DataFrame</em></a>) – DataFrame with a ‘sample’ column</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>df_matched</strong> – df with rows corresponding to matched samples</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)">pandas.DataFrame</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.measurements_add">
+<span class="sig-name descname"><span class="pre">measurements_add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_measurements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_analyses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_aliquots</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">score_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">98</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.measurements_add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.measurements_add" title="Link to this definition">¶</a></dt>
+<dd><p>Add measurements for new analyses, but don’t add samples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df_measurements</strong> (<a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)"><em>pandas.DataFrame</em></a>) – <p>DataFrame suitable for reference against the Measurements table
+must have have the following columns:</p>
+<blockquote>
+<div><p>analysis, quantity, mean, measurement_unit, uncertainty,
+uncertainty_unit</p>
+</div></blockquote>
+</p></li>
+<li><p><strong>df_analyses</strong> (<a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)"><em>pandas.DataFrame</em></a>) – DataFrame suitable for reference against the Analyses table.
+must have the following columns:
+analysis, aliquot, date, insturment, technique</p></li>
+<li><p><strong>df_aliquots</strong> (<a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)"><em>pandas.DataFrame</em></a>) – DataFrame suitable for reference against the Aliquots table.
+must have the following columns:
+aliquot, sample, material</p></li>
+<li><p><strong>score_threshold</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/functions.html#int" title="(in Python v3.12)"><em>int</em></a>) – 0-100, scoring threshold for matching sample names. defaults to 98</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.measurements_by_aliquot">
+<span class="sig-name descname"><span class="pre">measurements_by_aliquot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aliquots</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.measurements_by_aliquot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.measurements_by_aliquot" title="Link to this definition">¶</a></dt>
+<dd><p>Return a DataFrame with all measurements corresponding to the requested aliquots.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>aliquots</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><em>arraylike</em>) – aliquot(s) for which to retrieve measurements</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>df</strong> – All measurements associated with the aliquot(s).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)">pandas.DataFrame</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.measurements_by_sample">
+<span class="sig-name descname"><span class="pre">measurements_by_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">samples</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.measurements_by_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.measurements_by_sample" title="Link to this definition">¶</a></dt>
+<dd><p>return a DataFrame with all measurements corresponding to the requested
+samples</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>samples</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a><em> or </em><em>arraylike</em>) – sample or samples for which to retrieve measurements</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>df</strong> – all measurements associated with the sample.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)">pandas.DataFrame</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.measurements_update">
+<span class="sig-name descname"><span class="pre">measurements_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_measurements</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.measurements_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.measurements_update" title="Link to this definition">¶</a></dt>
+<dd><p>Update matching spot measurements in the Measurements table for
+matching analyses. Does not attempt to add aliquots, analyses, samples,
+or measurements</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df</strong> (<a class="reference external" href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.2)"><em>pandas.DataFrame</em></a>) – <p>Ideally generated by iolite_tools.measurements2sql()
+must have minimally the following columns:</p>
+<blockquote>
+<div><p>analysis, quantity, mean, measurement_unit, uncertainty,
+uncertainty_unit</p>
+</div></blockquote>
+<dl class="simple">
+<dt>optionally:</dt><dd><p>reference_material</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="geochemdb.GeochemDB.update_rows">
+<span class="sig-name descname"><span class="pre">update_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">table</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">match_values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_columns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">update_values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#GeochemDB.update_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.GeochemDB.update_rows" title="Link to this definition">¶</a></dt>
+<dd><p>Update columns in rows in a table based on values in matching columns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>table</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#str" title="(in Python v3.12)"><em>str</em></a>) – Name of table to update rows in.</p></li>
+<li><p><strong>match_columns</strong> (<em>arraylike</em>) – Columns to do matching on.</p></li>
+<li><p><strong>match_values</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – List of tuples of values to match rows on in match_columns. Length
+of each tuple must be same as len(match_columns)</p></li>
+<li><p><strong>update_columns</strong> (<em>arraylike</em>) – Columns for which to update values.</p></li>
+<li><p><strong>update_values</strong> (<a class="reference external" href="https://docs.python.org/3.12/library/stdtypes.html#list" title="(in Python v3.12)"><em>list</em></a>) – List of tuples with values to update in update_columns. Length of
+each tuple must be same as len(update_columns)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="geochemdb.aliquot_average">
+<span class="sig-prename descclassname"><span class="pre">geochemdb.</span></span><span class="sig-name descname"><span class="pre">aliquot_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df_measurements</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/geochemdb/geochemdb.html#aliquot_average"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#geochemdb.aliquot_average" title="Link to this definition">¶</a></dt>
+<dd><p>given a dataframe of measurements as generated by <a class="reference internal" href="#geochemdb.GeochemDB.measurements_by_sample" title="geochemdb.GeochemDB.measurements_by_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GeochemDB.measurements_by_sample()</span></code></a> or <code class="xref py py-meth docutils literal notranslate"><span class="pre">GeochemDB.measurements_by_aliquots()</span></code>, gather measurements by aliquot, averaging duplicate measurements. Assumes that duplicates have the same units.</p>
+<dl class="simple">
+<dt>to do:</dt><dd><p>implement more robust duplicate checking
+responsible uncertainty propagation</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>df_measurements</strong> (<em>pd.DataFrame</em>) – Dataframe of measurements output by <a class="reference internal" href="#geochemdb.GeochemDB.measurements_by_sample" title="geochemdb.GeochemDB.measurements_by_sample"><code class="xref py py-meth docutils literal notranslate"><span class="pre">GeochemDB.measurements_by_sample()</span></code></a>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>DataFrame with geochemical measurements averaged by aliquot.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">geochemdb</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="guide.html">Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">Module Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">geochemdb package</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="license.html">License</a></li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">geochemdb</a><ul>
+      <li>Previous: <a href="modules.html" title="previous chapter">geochemdb</a></li>
+      <li>Next: <a href="license.html" title="next chapter">License</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2024, Adrian Tasistro-Hart.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="_sources/geochemdb.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
