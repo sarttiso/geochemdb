@@ -49,7 +49,7 @@ Full implementation of the metadata collection described therein is a work-in-pr
 ### Primary Tables
 
 The geochemical data are assumed to follow a hierarchy that progresses from
-**sample → aliquot → analysis → measurement**. Various metadata are tabulated at each level. This structure is presented here and in the [guide](guide.ipynb) with the example of split-stream laser ablation mass spectrometry (LASS-ICPMS) of zircon.
+**sample → aliquot → analysis → measurement**. Various metadata are tabulated at each level. This structure is presented here and in the [guide](https://adrian.tasistro-hart.com/geochemdb/guide) with the example of split-stream laser ablation mass spectrometry (LASS-ICPMS) of zircon.
 
 **`Samples`**
 
