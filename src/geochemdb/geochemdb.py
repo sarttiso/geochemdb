@@ -27,7 +27,6 @@ class GeochemDB:
         ----------
         _database_path (str): Internal storage for the database path.
         con (sqlite3.Connection): SQLite connection object.
-        cursor (sqlite3.Cursor): SQLite cursor object.
         """
         self._database_path = database_path
         self.con = sqlite3.connect(self._database_path)

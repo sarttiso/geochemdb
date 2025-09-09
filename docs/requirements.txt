@@ -8,4 +8,4 @@ pandas
 thefuzz
 nbsphinx
 myst-nb
-sphinx-mdinclude
+furo
