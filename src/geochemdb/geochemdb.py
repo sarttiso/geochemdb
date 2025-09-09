@@ -31,7 +31,17 @@ class GeochemDB:
         """
         self._database_path = database_path
         self.con = sqlite3.connect(self._database_path)
-        self.cursor = self.con.cursor()
+        self._configure_connection()
+
+    def _configure_connection(self):
+        """
+        Configure the SQLite connection for better performance.
+        """
+        cur = self.con.cursor()
+        cur.execute('PRAGMA journal_mode=WAL;')
+        cur.execute('PRAGMA synchronous=NORMAL;')
+        cur.execute('PRAGMA foreign_keys=ON;')
+        cur.close()
 
     def __del__(self):
         """
@@ -156,7 +166,10 @@ class GeochemDB:
 
         """
         # get table header
-        res = self.cursor.execute(f'PRAGMA table_info("{table}")')
+        with self.con:
+            with self.con.cursor() as cursor:
+                res = cursor.execute(f'PRAGMA table_info("{table}")')
+        # res = self.cursor.execute(f'PRAGMA table_info("{table}")')
         columns_info = res.fetchall()
         # sqlite columns, not sure what the last 3 are
         cols_sq_df = pd.DataFrame(columns=['id',
@@ -261,10 +274,9 @@ class GeochemDB:
         sql = f'INSERT INTO {table} ({cols_str}) VALUES ({vals_str})'
 
         # execute sql
-        self.cursor.executemany(sql, values)
+        with self.con:
+            self.con.executemany(sql, values)
 
-        # commit
-        self.con.commit()
 
     def update_rows(self, table,
                     match_columns, match_values,
@@ -320,10 +332,9 @@ class GeochemDB:
                   zip(update_values, match_values)]
 
         # execute sql
-        self.cursor.executemany(sql, values)
-
-        # commit
-        self.con.commit()
+        with self.con:
+            with self.con.cursor() as cursor:
+                cursor.executemany(sql, values)
 
         return
 
@@ -504,10 +515,8 @@ class GeochemDB:
                          cols_meas,
                          df_measurements[cols_meas].values.tolist())
 
-        print('Added:\n' +
-              f'{np.sum(idx_aliquots)} aliquots,\n' +
-              f'{np.sum(idx_analyses)} analyses,\n' +
-              f'{len(df_measurements)} measurements')
+        print(f'Added: {len(df_measurements)} measurements.')
+    
 
     def measurements_by_sample(self, samples):
         """
