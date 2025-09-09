@@ -477,6 +477,7 @@ class GeochemDB:
             self.insert_rows('Aliquots',
                              cols_aliquots,
                              cur_values.tolist())
+            print(f'Added: {np.sum(idx_aliquots)} aliquots.')
 
         # create necessary analyses
         idx_analyses = ~self.matchrows('Analyses',
@@ -487,8 +488,18 @@ class GeochemDB:
             self.insert_rows('Analyses',
                              cols_analyses,
                              cur_values.tolist())
+            print(f'Added: {np.sum(idx_analyses)} analyses.')
 
-        # then add measurements
+        # verify that measurement quantity and unit are present in QuantitiesMeasurementUnits table
+        QuantitiesMeasurementUnits_df = pd.read_sql_query('SELECT * from QuantitiesMeasurementUnits',
+                                                          self.con)
+        for ii, row in df_measurements[['quantity', 'measurement_unit']].iterrows():
+            idx = (QuantitiesMeasurementUnits_df['quantity'] == row['quantity']) & \
+                  (QuantitiesMeasurementUnits_df['measurement_unit'] == row['measurement_unit'])
+            if not np.any(idx):
+                raise ValueError(f"Quantity and measurement_unit pair not in QuantitiesMeasurementUnits table: {row['quantity']}, {row['measurement_unit']}")
+
+        # then add measurements gracefully (close connection if error)
         self.insert_rows('Measurements',
                          cols_meas,
                          df_measurements[cols_meas].values.tolist())
