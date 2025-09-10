@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.1
+
+### Fixed
+- cursor bug in `GeochemDB.measurements_update()`
+
 ## v1.1.0
 
 ### Added

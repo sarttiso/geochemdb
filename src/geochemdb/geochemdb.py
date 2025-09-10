@@ -332,8 +332,7 @@ class GeochemDB:
 
         # execute sql
         with self.con:
-            with self.con.cursor() as cursor:
-                cursor.executemany(sql, values)
+            self.con.executemany(sql, values)
 
         return
 
