@@ -238,6 +238,81 @@ class GeochemDB:
         df['sample'] = df['sample'].replace(sample_match_dict)
 
         return df.copy()
+    
+    def _diagnose_foreign_key_violation(self, table, columns, values):
+        """
+        Helper to identify which values caused a foreign key violation.
+
+        Parameters
+        ----------
+        table : str
+            name of table in which to insert row.
+        columns : arraylike
+            columns in table to insert new values for.
+        values : list
+            must be a list of tuples
+        
+        Raises
+        ------
+        ValueError
+            with message indicating which foreign key(s) were violated and
+            which values were missing.
+        """
+        cursor = self.con.cursor()
+        # Get foreign keys: id, seq, table, from, to, on_update, on_delete, match
+        fks = cursor.execute(f"PRAGMA foreign_key_list({table})").fetchall()
+        
+        error_msgs = []
+        
+        for fk in fks:
+            ref_table = fk[2]
+            local_col = fk[3]
+            ref_col = fk[4]
+            
+            # Only check if we are actually inserting into this column
+            if local_col in columns:
+                # Convert columns to list to ensure .index() works (e.g. if numpy array)
+                col_idx = list(columns).index(local_col)
+                
+                # Extract values for this column from the input
+                input_vals = set()
+                for row in values:
+                    val = row[col_idx]
+                    if val is not None:
+                        input_vals.add(val)
+                
+                if not input_vals:
+                    continue
+                
+                input_vals_list = list(input_vals)
+                # Chunking to be safe (SQLite limit is often 999 variables)
+                chunk_size = 900 
+                existing_vals = set()
+                
+                for i in range(0, len(input_vals_list), chunk_size):
+                    chunk = input_vals_list[i:i + chunk_size]
+                    placeholders = ','.join('?' for _ in chunk)
+                    query = f"SELECT {ref_col} FROM {ref_table} WHERE {ref_col} IN ({placeholders})"
+                    res = cursor.execute(query, chunk).fetchall()
+                    for r in res:
+                        existing_vals.add(r[0])
+                
+                missing = input_vals - existing_vals
+                
+                if missing:
+                    # Limit output if too many missing
+                    missing_list = sorted(list(missing))
+                    missing_str = str(missing_list[:10])
+                    if len(missing_list) > 10:
+                        missing_str += f" ... and {len(missing_list) - 10} more"
+                    
+                    error_msgs.append(
+                        f"Foreign key violation for table '{table}', column '{local_col}'. "
+                        f"The following values are missing in referenced table '{ref_table}', column '{ref_col}': {missing_str}"
+                    )
+        
+        if error_msgs:
+            raise ValueError("\n".join(error_msgs))
 
     def insert_rows(self, table, columns, values):
         """
@@ -273,8 +348,14 @@ class GeochemDB:
         sql = f'INSERT INTO {table} ({cols_str}) VALUES ({vals_str})'
 
         # execute sql
-        with self.con:
-            self.con.executemany(sql, values)
+        try:
+            with self.con:
+                self.con.executemany(sql, values)
+        except sqlite3.IntegrityError as e:
+            if "FOREIGN KEY constraint failed" in str(e):
+                self._diagnose_foreign_key_violation(table, columns, values)
+            else:
+                raise e
 
 
     def update_rows(self, table,
@@ -492,6 +573,7 @@ class GeochemDB:
         idx_analyses = ~self.matchrows('Analyses',
                                        df_analyses['analysis'].values,
                                        'analysis')
+        # TODO: check that instrument and technique are valid entries
         if np.any(idx_analyses):
             cur_values = df_analyses.loc[idx_analyses][cols_analyses].values
             self.insert_rows('Analyses',
