@@ -620,16 +620,29 @@ class GeochemDB:
         if len(samples) == 1:
             sql = f'SELECT aliquot, sample FROM Aliquots WHERE sample = "{samples[0]}"'
         else:
-            sql = f'SELECT aliquot, sample FROM Aliquots WHERE sample in {tuple(samples)}'
+            sql = f'SELECT aliquot, sample FROM Aliquots WHERE sample in {tuple(samples.tolist())}'
         df_aliquots = pd.read_sql_query(sql, self.con)
         aliquots = tuple(df_aliquots['aliquot'].values)
 
+        # Safety check for empty results
+        if len(aliquots) == 0:
+            return pd.DataFrame()
+
         # then get matching analyses and measurements
-        sql = f'SELECT analysis, aliquot FROM Analyses WHERE aliquot in {aliquots}'
+        if len(aliquots) == 1:
+            sql = f'SELECT analysis, aliquot FROM Analyses WHERE aliquot = "{aliquots[0]}"'
+        else:
+            sql = f'SELECT analysis, aliquot FROM Analyses WHERE aliquot in {aliquots}'
         df_analyses = pd.read_sql_query(sql, self.con)
         analyses = tuple(df_analyses['analysis'].values)
 
-        sql = f'SELECT * FROM Measurements WHERE analysis in {analyses}'
+        if len(analyses) == 0:
+            return pd.DataFrame()
+
+        if len(analyses) == 1:
+            sql = f'SELECT * FROM Measurements WHERE analysis = "{analyses[0]}"'
+        else:
+            sql = f'SELECT * FROM Measurements WHERE analysis in {analyses}'
         df_measurements = pd.read_sql_query(sql, self.con)
 
         # add aliquot and sample information
