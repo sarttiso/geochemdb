@@ -761,11 +761,20 @@ def aliquot_average(df_measurements):
         implement more robust duplicate checking
         responsible uncertainty propagation
 
-    Args:
-        df_measurements (pd.DataFrame): Dataframe of measurements output by :py:meth:`GeochemDB.measurements_by_sample()`.
-    Returns:
-        pd.DataFrame: DataFrame with geochemical measurements averaged by aliquot.
+    Parameters
+    ----------
+    df_measurements : pd.DataFrame
+        Dataframe of measurements output by :py:meth:`GeochemDB.measurements_by_sample()`.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with geochemical measurements averaged by aliquot.
     """
+    # check if dataframe is empty
+    if len(df_measurements) == 0:
+        return pd.DataFrame()
+    
     df_aliquots = \
         df_measurements.pivot_table(columns=['quantity'],
                                     index=['aliquot', 'sample'],
