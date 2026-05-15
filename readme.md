@@ -2,7 +2,7 @@
 
 This python module provides a class and methods for adding, updating, and reading data from a SQLite database. It is geared towards a database of geochemical measurements on geologic materials, but it will be as general as possible with respect to admit a variety of data sources.
 
-A minimal SQLite schema for utilizing this package is presented below and available in this repository as [schema.sql](schema.sql). [SQLiteStudio](https://sqlitestudio.pl/) provides a convenient way to access and modify SQLite databases.
+A minimal SQLite schema for utilizing this package is presented below and available in this repository as [schema.sql](schema.sql). [Letos](https://letos.org/) provides a convenient way to access and modify SQLite databases.
 
 ## Getting Started
 
@@ -23,7 +23,7 @@ sqlite3 your-geochem-database.db < schema.sql
 ```
 
 #### Option 2
-Alternatively, download and install [SQLiteStudio](https://sqlitestudio.pl/). Create a new database from the "Database/Add a Database" menu. Create the file wherever you like, and name it as you like. Right click the newly-created database in the pane on the left and click "Execute SQL from file." In the new window, select the input file by navigating to the schema.sql file I provide and click ok. 
+Alternatively, download and install [Letos](https://letos.org/) (formerly SQLiteStudio). Create a new database from the "Database/Add a Database" menu. Create the file wherever you like, and name it as you like. Right click the newly-created database in the pane on the left and click "Execute SQL from file." In the new window, select the input file by navigating to the schema.sql file I provide and click ok. 
 
 #### Option 3
 Finally, you can just download the example database [`geochemdb_example.db`](example_data/geochemdb_example.db) in the *example_data* folder.
