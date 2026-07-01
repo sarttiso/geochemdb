@@ -15,18 +15,20 @@ pip install geochemdb
 
 ### Create Database
 
-#### Option 1
+#### Option 1 (recommended)
+You can download the example database [`geochemdb_example.db`](example_data/geochemdb_example.db) in the *example_data* folder, which comes preconfigured with the necessary tables and recommended metadata in the auxiliary tables. 
+
+I can recommend [Letos](https://letos.org/) (formerly SQLiteStudio) as a helpful way to visualize the database and interact with the tables and their data through an intuitive user interface.
+
+#### Option 2
+Alternatively, using Letos, create a new database from the "Database/Add a Database" menu. Create the file wherever you like, and name it as you like. Right click the newly-created database in the pane on the left and click "Execute SQL from file." In the new window, select the input file by navigating to the [schema.sql](schema.sql) file I provide and click ok. 
+
+#### Option 3
 I have a provided the [schema.sql](schema.sql) file for the structure shown below. You can use this to create your own, empty database by executing:
 
 ```bash
 sqlite3 your-geochem-database.db < schema.sql
 ```
-
-#### Option 2
-Alternatively, download and install [Letos](https://letos.org/) (formerly SQLiteStudio). Create a new database from the "Database/Add a Database" menu. Create the file wherever you like, and name it as you like. Right click the newly-created database in the pane on the left and click "Execute SQL from file." In the new window, select the input file by navigating to the schema.sql file I provide and click ok. 
-
-#### Option 3
-Finally, you can just download the example database [`geochemdb_example.db`](example_data/geochemdb_example.db) in the *example_data* folder.
 
 > [!NOTE]  
 > Samples must be added to the database manually. You can use SQLiteStudio for this.
