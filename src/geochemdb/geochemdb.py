@@ -954,4 +954,7 @@ def aliquot_average(df_measurements, method="weighted mean"):
     # combine averaged duplicates with non-duplicates
     df_aliquots_non_dups = df_aliquots[~df_aliquots.index.duplicated(keep=False)]
     df_aliquots = pd.concat([df_aliquots_non_dups, df_aliquots_dups_avg]).sort_index()
+
+    # rename multiindex index levels
+    df_aliquots.index.set_names(["Aliquot", "Sample"], inplace=True)
     return df_aliquots
